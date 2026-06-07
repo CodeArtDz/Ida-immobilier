@@ -1,0 +1,521 @@
+ou are a senior software architect and full-stack engineer.
+
+Build a production-ready French real estate platform for I.D.A Immobilier.
+
+This is a complete rebuild.
+
+The current website should only be used as a visual reference.
+
+Reuse:
+
+Branding
+Color palette
+Typography
+Layouts
+Existing UI design
+Existing UX patterns
+
+Do NOT reuse:
+
+Database schema
+Authentication system
+Property management logic
+User management logic
+Existing backend architecture
+
+Create a new clean scalable architecture.
+
+BUSINESS CONTEXT
+
+Agency Name: I.D.A Immobilier
+
+Location: Marignane, France
+
+Coverage Area:
+
+Marignane
+Marseille
+Aix-en-Provence
+Vitrolles
+Les Pennes-Mirabeau
+Châteauneuf-les-Martigues
+Carry-le-Rouet
+Sausset-les-Pins
+Gignac-la-Nerthe
+Rognac
+Berre-l'Étang
+
+and all locations within a 70km radius.
+
+Primary language:
+
+French (France)
+
+Future multilingual support:
+
+French
+English
+Arabic
+BRANDING
+
+Style:
+
+Luxury Real Estate
+Premium
+Elegant
+Trustworthy
+Professional
+
+Typography:
+
+Headings: Cinzel
+
+Body: Inter
+
+Colors:
+
+Deep Navy Blue
+Gold Accent
+White
+Neutral Backgrounds
+
+Avoid startup-style design.
+
+TECH STACK
+
+Frontend:
+
+Next.js 15
+TypeScript
+Tailwind CSS
+ShadCN UI
+Framer Motion
+
+Backend:
+
+Supabase
+PostgreSQL
+Supabase Auth
+Supabase Storage
+Supabase Realtime
+
+Validation:
+
+Zod
+React Hook Form
+
+Integrations:
+
+Google Maps
+Google Calendar
+Apple Calendar (ICS)
+Google Analytics
+Google Search Console
+ORGANIZATION HIERARCHY
+
+SuperAdmin
+↓
+Admin
+↓
+Agency Manager
+↓
+Agent
+↓
+Client
+
+SUPERADMIN
+
+Platform owner.
+
+Can:
+
+create admins
+manage admins
+access all agencies
+access all users
+access all properties
+access all analytics
+access all leads
+access audit logs
+manage platform settings
+ADMIN
+
+Can:
+
+create agencies
+edit agencies
+deactivate agencies
+create agency managers
+edit agency managers
+create agents
+edit agents
+deactivate agents
+transfer agents between agencies
+access all agencies
+access all leads
+access all properties
+access all analytics
+
+Can perform all Agency Manager actions.
+
+AGENCY MANAGER
+
+Belongs to one agency.
+
+Can:
+
+manage agency properties
+manage agency leads
+manage agency appointments
+manage agency clients
+access agency analytics
+communicate with agents
+temporarily reassign properties
+
+Cannot:
+
+create agencies
+create managers
+create agents
+AGENT
+
+Can:
+
+create properties
+edit own properties
+upload media
+manage visits
+manage appointments
+receive leads
+communicate with clients
+CLIENT
+
+Can:
+
+register
+login
+save favorite properties
+create saved searches
+receive alerts
+schedule visits
+communicate with agents
+access client dashboard
+MULTI-AGENCY SUPPORT
+
+Support unlimited agencies.
+
+Agency fields:
+
+name
+logo
+email
+phone
+address
+city
+postal_code
+website
+status
+
+All records must be agency-scoped.
+
+PROPERTY SYSTEM
+
+The platform is the source of truth.
+
+No dependency on Hektor.
+
+Properties are managed directly inside the platform.
+
+Property statuses:
+
+Draft
+Published
+Reserved
+Sold
+Rented
+Archived
+PROPERTY FORM
+
+French real estate standard.
+
+Include:
+
+Location:
+
+Address
+Postal Code
+City
+Department
+Region
+Country
+
+Pricing:
+
+Sale Price
+Rental Price
+Charges
+Agency Fees
+Taxe Foncière
+
+Characteristics:
+
+Living Area
+Land Area
+Loi Carrez Surface
+Rooms
+Bedrooms
+Bathrooms
+Floor
+Floors
+Year Built
+Orientation
+Heating
+
+Energy:
+
+DPE
+GES
+Annual Energy Costs
+
+Equipment:
+
+Terrace
+Balcony
+Garage
+Parking
+Garden
+Pool
+Cellar
+Elevator
+Air Conditioning
+Fiber
+
+Descriptions:
+
+Short Description
+Full Description
+
+SEO:
+
+Slug
+Meta Title
+Meta Description
+PROPERTY OWNERSHIP
+
+Each property contains:
+
+agency_id
+owner_agent_id
+current_agent_id
+
+owner_agent_id = original creator
+
+current_agent_id = current responsible agent
+
+TEMPORARY PROPERTY REALLOCATION
+
+Agency Managers can temporarily assign properties to another agent.
+
+Fields:
+
+property_id
+owner_agent_id
+temporary_agent_id
+start_date
+end_date
+reason
+
+During reassignment:
+
+inquiries go to temporary agent
+visits go to temporary agent
+property contact card displays temporary agent
+
+Automatically restore ownership after reassignment expires.
+
+MEDIA MANAGEMENT
+
+Support:
+
+Photos
+Videos
+Floor Plans
+PDFs
+
+Features:
+
+Drag and Drop Upload
+Multiple Upload
+Progress Indicators
+AUTOMATIC WATERMARKING
+
+Apply agency logo watermark automatically to:
+
+Photos
+Videos
+
+Store:
+
+Original file
+Watermarked file
+
+Only watermarked files are public.
+
+MAPS
+
+Automatically geocode addresses.
+
+Display:
+
+Interactive map
+Nearby schools
+Nearby transport
+Nearby amenities
+CLIENT PORTAL
+
+Modules:
+
+Favorites
+
+Saved Searches
+
+Notifications
+
+Visits
+
+Messages
+
+SMART ALERTS
+
+When a new property matches a saved search:
+
+Automatically notify the client.
+
+When a favorited property changes:
+
+price
+status
+availability
+
+Notify the client.
+
+LEAD MANAGEMENT
+
+Lead sources:
+
+Property inquiries
+Estimation requests
+Contact forms
+Manual entry
+
+Automatically assign leads to responsible agents.
+
+Respect temporary reallocation rules.
+
+CALENDAR SYSTEM
+
+Integrate:
+
+Google Calendar
+Apple Calendar
+
+Support:
+
+Visits
+Meetings
+Reminders
+
+Two-way synchronization.
+
+INTERNAL MESSAGING
+
+Real-time messaging between:
+
+Admins
+Managers
+Agents
+Clients
+
+Features:
+
+Attachments
+Notifications
+Search
+Read status
+ESTIMATION MODULE
+
+Keep existing estimation concept.
+
+Enhance it with:
+
+Lead generation
+Analytics
+Follow-up tracking
+SEO
+
+Generate:
+
+City pages
+Neighborhood pages
+Postal code pages
+Property pages
+Agent pages
+Estimation pages
+
+Implement:
+
+JSON-LD
+Schema.org
+OpenGraph
+XML Sitemaps
+Canonical URLs
+
+Target:
+
+Lighthouse SEO 100
+Accessibility 95+
+Performance 95+
+SECURITY
+
+Implement:
+
+Supabase RLS
+Role-based permissions
+MFA for SuperAdmin and Admin
+Audit logs
+Rate limiting
+Secure uploads
+GDPR compliance
+DATABASE TABLES
+
+Create:
+
+users
+agencies
+properties
+property_media
+property_assignments
+leads
+appointments
+favorites
+saved_searches
+notifications
+conversations
+messages
+estimations
+activity_logs
+IMPORTANT
+
+DO NOT START WITH UI.
+
+FIRST:
+
+Design database schema
+Create ERD
+Define RLS policies
+Define authentication architecture
+Define role permission matrix
+Create service architecture
+Create folder structure
+
+Present the architecture before implementation.

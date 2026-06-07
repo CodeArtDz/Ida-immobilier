@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "-crQgriu6c4FrRzTLnNie"
+uri = "file://artifacts/ida-immobilier/src/assets/images/hero-bg.png"
+type = "image"
+title = "Luxury Provence villa exterior"
+
+[[generated]]
+id = "KbZTziX1gO9vpQBk3sbsC"
+uri = "file://artifacts/ida-immobilier/src/assets/images/property-1.png"
+type = "image"
+title = "Luxury apartment interior"
+
+[[generated]]
+id = "UdfND4A36qNQxerQHGlkX"
+uri = "file://artifacts/ida-immobilier/src/assets/images/property-2.png"
+type = "image"
+title = "Modern luxury villa"
+
+[[generated]]
+id = "4lybKT5F3UWHqpZy9ZCJe"
+uri = "file://artifacts/ida-immobilier/src/assets/images/property-3.png"
+type = "image"
+title = "Provence stone house"

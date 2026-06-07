@@ -1,22 +1,32 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: I.D.A Immobilier API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: properties
+  - name: agencies
+  - name: users
+  - name: leads
+  - name: appointments
+  - name: favorites
+  - name: saved-searches
+  - name: notifications
+  - name: conversations
+  - name: estimations
+  - name: analytics
+  - name: media
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +34,2340 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/register:
+    post:
+      operationId: registerClient
+      tags: [auth]
+      summary: Register a new client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # PROPERTIES
+  /properties:
+    get:
+      operationId: listProperties
+      tags: [properties]
+      summary: List properties with filters
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, published, reserved, sold, rented, archived]
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: city
+          schema:
+            type: string
+        - in: query
+          name: minPrice
+          schema:
+            type: number
+        - in: query
+          name: maxPrice
+          schema:
+            type: number
+        - in: query
+          name: minArea
+          schema:
+            type: number
+        - in: query
+          name: maxArea
+          schema:
+            type: number
+        - in: query
+          name: rooms
+          schema:
+            type: integer
+        - in: query
+          name: bedrooms
+          schema:
+            type: integer
+        - in: query
+          name: agencyId
+          schema:
+            type: integer
+        - in: query
+          name: agentId
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyListResponse"
+    post:
+      operationId: createProperty
+      tags: [properties]
+      summary: Create a property
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+  /properties/featured:
+    get:
+      operationId: listFeaturedProperties
+      tags: [properties]
+      summary: Get featured/highlighted properties for homepage
+      responses:
+        "200":
+          description: Featured properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Property"
+
+  /properties/stats:
+    get:
+      operationId: getPropertyStats
+      tags: [properties]
+      summary: Property counts by status/type/city for dashboard
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyStats"
+
+  /properties/{id}:
+    get:
+      operationId: getProperty
+      tags: [properties]
+      summary: Get property by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Property
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProperty
+      tags: [properties]
+      summary: Update a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+    delete:
+      operationId: deleteProperty
+      tags: [properties]
+      summary: Delete a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /properties/{id}/publish:
+    patch:
+      operationId: publishProperty
+      tags: [properties]
+      summary: Publish a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+  /properties/{id}/media:
+    get:
+      operationId: listPropertyMedia
+      tags: [media]
+      summary: List media for a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Media list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PropertyMedia"
+    post:
+      operationId: addPropertyMedia
+      tags: [media]
+      summary: Add media to a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyMediaInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyMedia"
+
+  /properties/{id}/media/{mediaId}:
+    delete:
+      operationId: deletePropertyMedia
+      tags: [media]
+      summary: Delete a media item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: mediaId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /properties/{id}/assign:
+    post:
+      operationId: assignProperty
+      tags: [properties]
+      summary: Temporarily assign a property to another agent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyAssignmentInput"
+      responses:
+        "201":
+          description: Assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyAssignment"
+
+  /properties/{id}/similar:
+    get:
+      operationId: getSimilarProperties
+      tags: [properties]
+      summary: Get similar properties
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Similar properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Property"
+
+  # AGENCIES
+  /agencies:
+    get:
+      operationId: listAgencies
+      tags: [agencies]
+      summary: List all agencies
+      responses:
+        "200":
+          description: Agencies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agency"
+    post:
+      operationId: createAgency
+      tags: [agencies]
+      summary: Create an agency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgencyInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agency"
+
+  /agencies/{id}:
+    get:
+      operationId: getAgency
+      tags: [agencies]
+      summary: Get agency by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Agency
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agency"
+    patch:
+      operationId: updateAgency
+      tags: [agencies]
+      summary: Update an agency
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgencyUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agency"
+
+  /agencies/{id}/agents:
+    get:
+      operationId: listAgencyAgents
+      tags: [agencies]
+      summary: List agents for an agency
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /agencies/{id}/stats:
+    get:
+      operationId: getAgencyStats
+      tags: [agencies]
+      summary: Get agency analytics summary
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgencyStats"
+
+  # USERS
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users
+      parameters:
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [superadmin, admin, agency_manager, agent, client]
+        - in: query
+          name: agencyId
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user (admin/manager/agent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}/deactivate:
+    patch:
+      operationId: deactivateUser
+      tags: [users]
+      summary: Deactivate a user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # LEADS
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List leads
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [new, contacted, qualified, lost, won]
+        - in: query
+          name: agentId
+          schema:
+            type: integer
+        - in: query
+          name: source
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Submit a lead/inquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get lead by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      summary: Update lead status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/stats:
+    get:
+      operationId: getLeadStats
+      tags: [leads]
+      summary: Lead pipeline stats by status and source
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadStats"
+
+  # APPOINTMENTS
+  /appointments:
+    get:
+      operationId: listAppointments
+      tags: [appointments]
+      summary: List appointments
+      parameters:
+        - in: query
+          name: agentId
+          schema:
+            type: integer
+        - in: query
+          name: clientId
+          schema:
+            type: integer
+        - in: query
+          name: propertyId
+          schema:
+            type: integer
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+    post:
+      operationId: createAppointment
+      tags: [appointments]
+      summary: Book an appointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+
+  /appointments/{id}:
+    get:
+      operationId: getAppointment
+      tags: [appointments]
+      summary: Get appointment by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Appointment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+    patch:
+      operationId: updateAppointment
+      tags: [appointments]
+      summary: Update appointment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+    delete:
+      operationId: deleteAppointment
+      tags: [appointments]
+      summary: Cancel appointment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # FAVORITES
+  /favorites:
+    get:
+      operationId: listFavorites
+      tags: [favorites]
+      summary: List current user's favorites
+      responses:
+        "200":
+          description: Favorites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Favorite"
+    post:
+      operationId: addFavorite
+      tags: [favorites]
+      summary: Add property to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FavoriteInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Favorite"
+
+  /favorites/{propertyId}:
+    delete:
+      operationId: removeFavorite
+      tags: [favorites]
+      summary: Remove property from favorites
+      parameters:
+        - in: path
+          name: propertyId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  # SAVED SEARCHES
+  /saved-searches:
+    get:
+      operationId: listSavedSearches
+      tags: [saved-searches]
+      summary: List current user's saved searches
+      responses:
+        "200":
+          description: Saved searches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedSearch"
+    post:
+      operationId: createSavedSearch
+      tags: [saved-searches]
+      summary: Save a search alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedSearchInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedSearch"
+
+  /saved-searches/{id}:
+    delete:
+      operationId: deleteSavedSearch
+      tags: [saved-searches]
+      summary: Delete a saved search
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # NOTIFICATIONS
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List current user's notifications
+      parameters:
+        - in: query
+          name: unread
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # CONVERSATIONS / MESSAGING
+  /conversations:
+    get:
+      operationId: listConversations
+      tags: [conversations]
+      summary: List conversations for current user
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+    post:
+      operationId: createConversation
+      tags: [conversations]
+      summary: Start a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conversations/{id}/messages:
+    get:
+      operationId: listMessages
+      tags: [conversations]
+      summary: Get messages for a conversation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: sendMessage
+      tags: [conversations]
+      summary: Send a message in a conversation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  # ESTIMATIONS
+  /estimations:
+    get:
+      operationId: listEstimations
+      tags: [estimations]
+      summary: List estimation requests
+      responses:
+        "200":
+          description: Estimations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Estimation"
+    post:
+      operationId: createEstimation
+      tags: [estimations]
+      summary: Submit an estimation request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstimationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Estimation"
+
+  /estimations/{id}:
+    get:
+      operationId: getEstimation
+      tags: [estimations]
+      summary: Get estimation by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Estimation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Estimation"
+    patch:
+      operationId: updateEstimation
+      tags: [estimations]
+      summary: Update estimation (agent response)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstimationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Estimation"
+
+  # ANALYTICS
+  /analytics/dashboard:
+    get:
+      operationId: getDashboardAnalytics
+      tags: [analytics]
+      summary: Global dashboard summary — properties, leads, appointments, revenue
+      responses:
+        "200":
+          description: Dashboard analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardAnalytics"
+
+  /analytics/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [analytics]
+      summary: Recent activity feed across all entities
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /analytics/cities:
+    get:
+      operationId: getCityStats
+      tags: [analytics]
+      summary: Property counts and avg price per city
+      responses:
+        "200":
+          description: City stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CityStats"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # AUTH SCHEMAS
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RegisterInput:
+      type: object
+      required: [email, password, firstName, lastName, phone]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    # USER SCHEMAS
+    User:
+      type: object
+      required: [id, email, firstName, lastName, role, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [superadmin, admin, agency_manager, agent, client]
+        phone:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        agencyId:
+          type: ["integer", "null"]
+        agencyName:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserInput:
+      type: object
+      required: [email, password, firstName, lastName, role]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [admin, agency_manager, agent, client]
+        phone:
+          type: string
+        agencyId:
+          type: ["integer", "null"]
+
+    UserUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        avatarUrl:
+          type: string
+        agencyId:
+          type: ["integer", "null"]
+        isActive:
+          type: boolean
+
+    # AGENCY SCHEMAS
+    Agency:
+      type: object
+      required: [id, name, email, phone, address, city, postalCode, status, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        website:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive]
+        agentCount:
+          type: integer
+        propertyCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    AgencyInput:
+      type: object
+      required: [name, email, phone, address, city, postalCode]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        website:
+          type: string
+        logoUrl:
+          type: string
+
+    AgencyUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        website:
+          type: string
+        logoUrl:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    AgencyStats:
+      type: object
+      required: [totalProperties, publishedProperties, totalLeads, totalAppointments, totalAgents]
+      properties:
+        totalProperties:
+          type: integer
+        publishedProperties:
+          type: integer
+        totalLeads:
+          type: integer
+        totalAppointments:
+          type: integer
+        totalAgents:
+          type: integer
+        avgPropertyPrice:
+          type: ["number", "null"]
+
+    # PROPERTY SCHEMAS
+    Property:
+      type: object
+      required: [id, title, type, status, city, postalCode, address, agencyId, ownerAgentId, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [apartment, house, villa, land, commercial, garage, other]
+        status:
+          type: string
+          enum: [draft, published, reserved, sold, rented, archived]
+        # Location
+        address:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+        department:
+          type: ["string", "null"]
+        region:
+          type: ["string", "null"]
+        country:
+          type: string
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        # Pricing
+        salePrice:
+          type: ["number", "null"]
+        rentalPrice:
+          type: ["number", "null"]
+        charges:
+          type: ["number", "null"]
+        agencyFees:
+          type: ["number", "null"]
+        taxeFonciere:
+          type: ["number", "null"]
+        # Characteristics
+        livingArea:
+          type: ["number", "null"]
+        landArea:
+          type: ["number", "null"]
+        carrezArea:
+          type: ["number", "null"]
+        rooms:
+          type: ["integer", "null"]
+        bedrooms:
+          type: ["integer", "null"]
+        bathrooms:
+          type: ["integer", "null"]
+        floor:
+          type: ["integer", "null"]
+        totalFloors:
+          type: ["integer", "null"]
+        yearBuilt:
+          type: ["integer", "null"]
+        orientation:
+          type: ["string", "null"]
+        heating:
+          type: ["string", "null"]
+        # Energy
+        dpeRating:
+          type: ["string", "null"]
+        gesRating:
+          type: ["string", "null"]
+        annualEnergyCost:
+          type: ["number", "null"]
+        # Equipment (booleans)
+        hasTerrace:
+          type: boolean
+        hasBalcony:
+          type: boolean
+        hasGarage:
+          type: boolean
+        hasParking:
+          type: boolean
+        hasGarden:
+          type: boolean
+        hasPool:
+          type: boolean
+        hasCellar:
+          type: boolean
+        hasElevator:
+          type: boolean
+        hasAirConditioning:
+          type: boolean
+        hasFiber:
+          type: boolean
+        # Descriptions
+        shortDescription:
+          type: ["string", "null"]
+        fullDescription:
+          type: ["string", "null"]
+        # SEO
+        metaTitle:
+          type: ["string", "null"]
+        metaDescription:
+          type: ["string", "null"]
+        # Relations
+        agencyId:
+          type: integer
+        agencyName:
+          type: ["string", "null"]
+        ownerAgentId:
+          type: integer
+        currentAgentId:
+          type: ["integer", "null"]
+        agentName:
+          type: ["string", "null"]
+        agentPhone:
+          type: ["string", "null"]
+        agentEmail:
+          type: ["string", "null"]
+        agentAvatarUrl:
+          type: ["string", "null"]
+        # Media
+        mainImageUrl:
+          type: ["string", "null"]
+        mediaCount:
+          type: integer
+        viewCount:
+          type: integer
+        favoriteCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PropertyListResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Property"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    PropertyInput:
+      type: object
+      required: [title, type, address, postalCode, city]
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum: [apartment, house, villa, land, commercial, garage, other]
+        address:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+        department:
+          type: string
+        region:
+          type: string
+        country:
+          type: string
+        salePrice:
+          type: number
+        rentalPrice:
+          type: number
+        charges:
+          type: number
+        agencyFees:
+          type: number
+        taxeFonciere:
+          type: number
+        livingArea:
+          type: number
+        landArea:
+          type: number
+        carrezArea:
+          type: number
+        rooms:
+          type: integer
+        bedrooms:
+          type: integer
+        bathrooms:
+          type: integer
+        floor:
+          type: integer
+        totalFloors:
+          type: integer
+        yearBuilt:
+          type: integer
+        orientation:
+          type: string
+        heating:
+          type: string
+        dpeRating:
+          type: string
+        gesRating:
+          type: string
+        annualEnergyCost:
+          type: number
+        hasTerrace:
+          type: boolean
+        hasBalcony:
+          type: boolean
+        hasGarage:
+          type: boolean
+        hasParking:
+          type: boolean
+        hasGarden:
+          type: boolean
+        hasPool:
+          type: boolean
+        hasCellar:
+          type: boolean
+        hasElevator:
+          type: boolean
+        hasAirConditioning:
+          type: boolean
+        hasFiber:
+          type: boolean
+        shortDescription:
+          type: string
+        fullDescription:
+          type: string
+        metaTitle:
+          type: string
+        metaDescription:
+          type: string
+        agencyId:
+          type: integer
+
+    PropertyUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, reserved, sold, rented, archived]
+        type:
+          type: string
+        address:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+        salePrice:
+          type: number
+        rentalPrice:
+          type: number
+        charges:
+          type: number
+        agencyFees:
+          type: number
+        taxeFonciere:
+          type: number
+        livingArea:
+          type: number
+        landArea:
+          type: number
+        carrezArea:
+          type: number
+        rooms:
+          type: integer
+        bedrooms:
+          type: integer
+        bathrooms:
+          type: integer
+        floor:
+          type: integer
+        totalFloors:
+          type: integer
+        yearBuilt:
+          type: integer
+        orientation:
+          type: string
+        heating:
+          type: string
+        dpeRating:
+          type: string
+        gesRating:
+          type: string
+        annualEnergyCost:
+          type: number
+        hasTerrace:
+          type: boolean
+        hasBalcony:
+          type: boolean
+        hasGarage:
+          type: boolean
+        hasParking:
+          type: boolean
+        hasGarden:
+          type: boolean
+        hasPool:
+          type: boolean
+        hasCellar:
+          type: boolean
+        hasElevator:
+          type: boolean
+        hasAirConditioning:
+          type: boolean
+        hasFiber:
+          type: boolean
+        shortDescription:
+          type: string
+        fullDescription:
+          type: string
+        metaTitle:
+          type: string
+        metaDescription:
+          type: string
+
+    PropertyStats:
+      type: object
+      required: [byStatus, byType, byCity, total]
+      properties:
+        total:
+          type: integer
+        byStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatGroup"
+        byType:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatGroup"
+        byCity:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatGroup"
+
+    StatGroup:
+      type: object
+      required: [label, count]
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+        value:
+          type: ["number", "null"]
+
+    # PROPERTY MEDIA
+    PropertyMedia:
+      type: object
+      required: [id, propertyId, url, type, order, createdAt]
+      properties:
+        id:
+          type: integer
+        propertyId:
+          type: integer
+        url:
+          type: string
+        watermarkedUrl:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [photo, video, floor_plan, pdf]
+        caption:
+          type: ["string", "null"]
+        order:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    PropertyMediaInput:
+      type: object
+      required: [url, type]
+      properties:
+        url:
+          type: string
+        type:
+          type: string
+          enum: [photo, video, floor_plan, pdf]
+        caption:
+          type: string
+        order:
+          type: integer
+
+    # PROPERTY ASSIGNMENT
+    PropertyAssignment:
+      type: object
+      required: [id, propertyId, ownerAgentId, temporaryAgentId, startDate, endDate]
+      properties:
+        id:
+          type: integer
+        propertyId:
+          type: integer
+        ownerAgentId:
+          type: integer
+        temporaryAgentId:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PropertyAssignmentInput:
+      type: object
+      required: [temporaryAgentId, startDate, endDate]
+      properties:
+        temporaryAgentId:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+
+    # LEAD SCHEMAS
+    Lead:
+      type: object
+      required: [id, firstName, lastName, email, source, status, createdAt]
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        source:
+          type: string
+          enum: [property_inquiry, estimation_request, contact_form, manual]
+        status:
+          type: string
+          enum: [new, contacted, qualified, lost, won]
+        message:
+          type: ["string", "null"]
+        propertyId:
+          type: ["integer", "null"]
+        propertyTitle:
+          type: ["string", "null"]
+        assignedAgentId:
+          type: ["integer", "null"]
+        agentName:
+          type: ["string", "null"]
+        agencyId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    LeadInput:
+      type: object
+      required: [firstName, lastName, email, source]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        source:
+          type: string
+          enum: [property_inquiry, estimation_request, contact_form, manual]
+        message:
+          type: string
+        propertyId:
+          type: integer
+
+    LeadUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [new, contacted, qualified, lost, won]
+        assignedAgentId:
+          type: integer
+        notes:
+          type: string
+
+    LeadStats:
+      type: object
+      required: [total, byStatus, bySource]
+      properties:
+        total:
+          type: integer
+        byStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatGroup"
+        bySource:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatGroup"
+
+    # APPOINTMENT SCHEMAS
+    Appointment:
+      type: object
+      required: [id, type, scheduledAt, status, agentId, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [visit, meeting, phone_call, other]
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        propertyId:
+          type: ["integer", "null"]
+        propertyTitle:
+          type: ["string", "null"]
+        propertyAddress:
+          type: ["string", "null"]
+        agentId:
+          type: integer
+        agentName:
+          type: ["string", "null"]
+        clientId:
+          type: ["integer", "null"]
+        clientName:
+          type: ["string", "null"]
+        clientEmail:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    AppointmentInput:
+      type: object
+      required: [type, scheduledAt, agentId]
+      properties:
+        type:
+          type: string
+          enum: [visit, meeting, phone_call, other]
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        propertyId:
+          type: integer
+        agentId:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        notes:
+          type: string
+
+    AppointmentUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        notes:
+          type: string
+
+    # FAVORITE SCHEMAS
+    Favorite:
+      type: object
+      required: [id, userId, propertyId, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        propertyId:
+          type: integer
+        property:
+          $ref: "#/components/schemas/Property"
+        createdAt:
+          type: string
+          format: date-time
+
+    FavoriteInput:
+      type: object
+      required: [propertyId]
+      properties:
+        propertyId:
+          type: integer
+
+    # SAVED SEARCH SCHEMAS
+    SavedSearch:
+      type: object
+      required: [id, userId, name, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        type:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        minPrice:
+          type: ["number", "null"]
+        maxPrice:
+          type: ["number", "null"]
+        minArea:
+          type: ["number", "null"]
+        maxArea:
+          type: ["number", "null"]
+        rooms:
+          type: ["integer", "null"]
+        bedrooms:
+          type: ["integer", "null"]
+        alertEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    SavedSearchInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        city:
+          type: string
+        minPrice:
+          type: number
+        maxPrice:
+          type: number
+        minArea:
+          type: number
+        maxArea:
+          type: number
+        rooms:
+          type: integer
+        bedrooms:
+          type: integer
+        alertEnabled:
+          type: boolean
+
+    # NOTIFICATION SCHEMAS
+    Notification:
+      type: object
+      required: [id, userId, type, title, isRead, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [new_property_match, price_change, status_change, new_lead, new_message, appointment_reminder]
+        title:
+          type: string
+        body:
+          type: ["string", "null"]
+        propertyId:
+          type: ["integer", "null"]
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    # CONVERSATION / MESSAGE SCHEMAS
+    Conversation:
+      type: object
+      required: [id, subject, createdAt]
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        propertyId:
+          type: ["integer", "null"]
+        propertyTitle:
+          type: ["string", "null"]
+        participantCount:
+          type: integer
+        lastMessage:
+          type: ["string", "null"]
+        lastMessageAt:
+          type: ["string", "null"]
+        unreadCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ConversationInput:
+      type: object
+      required: [subject, participantIds]
+      properties:
+        subject:
+          type: string
+        propertyId:
+          type: integer
+        participantIds:
+          type: array
+          items:
+            type: integer
+        initialMessage:
+          type: string
+
+    Message:
+      type: object
+      required: [id, conversationId, senderId, body, createdAt]
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        senderId:
+          type: integer
+        senderName:
+          type: string
+        senderAvatarUrl:
+          type: ["string", "null"]
+        body:
+          type: string
+        attachmentUrl:
+          type: ["string", "null"]
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    MessageInput:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+        attachmentUrl:
+          type: string
+
+    # ESTIMATION SCHEMAS
+    Estimation:
+      type: object
+      required: [id, firstName, lastName, email, address, city, propertyType, status, createdAt]
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        propertyType:
+          type: string
+          enum: [apartment, house, villa, land, commercial, other]
+        livingArea:
+          type: ["number", "null"]
+        rooms:
+          type: ["integer", "null"]
+        bedrooms:
+          type: ["integer", "null"]
+        condition:
+          type: ["string", "null"]
+        hasParking:
+          type: boolean
+        hasGarden:
+          type: boolean
+        hasPool:
+          type: boolean
+        additionalInfo:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        estimatedMinPrice:
+          type: ["number", "null"]
+        estimatedMaxPrice:
+          type: ["number", "null"]
+        agentNotes:
+          type: ["string", "null"]
+        assignedAgentId:
+          type: ["integer", "null"]
+        agentName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    EstimationInput:
+      type: object
+      required: [firstName, lastName, email, address, city, postalCode, propertyType]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        propertyType:
+          type: string
+          enum: [apartment, house, villa, land, commercial, other]
+        livingArea:
+          type: number
+        rooms:
+          type: integer
+        bedrooms:
+          type: integer
+        condition:
+          type: string
+        hasParking:
+          type: boolean
+        hasGarden:
+          type: boolean
+        hasPool:
+          type: boolean
+        additionalInfo:
+          type: string
+
+    EstimationUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        estimatedMinPrice:
+          type: number
+        estimatedMaxPrice:
+          type: number
+        agentNotes:
+          type: string
+        assignedAgentId:
+          type: integer
+
+    # ANALYTICS SCHEMAS
+    DashboardAnalytics:
+      type: object
+      required: [properties, leads, appointments, estimations]
+      properties:
+        properties:
+          type: object
+          required: [total, published, reserved, sold]
+          properties:
+            total:
+              type: integer
+            published:
+              type: integer
+            reserved:
+              type: integer
+            sold:
+              type: integer
+            newThisMonth:
+              type: integer
+        leads:
+          type: object
+          required: [total, new, contacted, won]
+          properties:
+            total:
+              type: integer
+            new:
+              type: integer
+            contacted:
+              type: integer
+            won:
+              type: integer
+            conversionRate:
+              type: number
+        appointments:
+          type: object
+          required: [total, upcoming, today]
+          properties:
+            total:
+              type: integer
+            upcoming:
+              type: integer
+            today:
+              type: integer
+        estimations:
+          type: object
+          required: [total, pending, completed]
+          properties:
+            total:
+              type: integer
+            pending:
+              type: integer
+            completed:
+              type: integer
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [property_created, property_published, lead_created, appointment_booked, estimation_requested, message_sent]
+        description:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        entityType:
+          type: ["string", "null"]
+        actorName:
+          type: ["string", "null"]
+        actorAvatarUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    CityStats:
+      type: object
+      required: [city, count]
+      properties:
+        city:
+          type: string
+        count:
+          type: integer
+        avgPrice:
+          type: ["number", "null"]
+        minPrice:
+          type: ["number", "null"]
+        maxPrice:
+          type: ["number", "null"]

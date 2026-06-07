@@ -1,0 +1,3 @@
+- [IDA Immobilier DB gotchas](ida-db-gotchas.md) — numeric fields return strings from pg; always parseFloat() in routes. After schema changes, run typecheck:libs before api-server typecheck.
+- [IDA Immobilier Express 5 params](ida-express5-params.md) — req.params values need `as string` cast before parseInt() due to Express 5 TS types seeing string | string[].
+- [IDA Immobilier auth](ida-auth.md) — token-based auth with crypto.scrypt; tokens in-memory Map; replace with Redis for multi-instance prod.
