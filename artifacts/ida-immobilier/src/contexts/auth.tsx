@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useGetMe } from "@workspace/api-client-react";
-import type { User } from "@workspace/api-client-react";
+import type { GetMeResponse } from "@workspace/api-client-react";
+
+type User = GetMeResponse;
 
 interface AuthContextType {
   user: User | null;
@@ -13,26 +15,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
-  const { data: user, isLoading, refetch } = useGetMe({
+  const [cachedUser, setCachedUser] = useState<User | null>(null);
+
+  const { data: fetchedUser, isLoading } = useGetMe({
     query: {
-      enabled: !!token,
+      enabled: !!token && !cachedUser,
       retry: false,
     }
   });
 
+  const user = cachedUser ?? fetchedUser ?? null;
+
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem("token", newToken);
     setToken(newToken);
-    refetch();
+    setCachedUser(newUser);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
+    setCachedUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user: user || null, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading: !!token && isLoading && !cachedUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
