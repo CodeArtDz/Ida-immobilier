@@ -1,7 +1,33 @@
 import { useState, useMemo } from "react";
-import { useListAppointments } from "@workspace/api-client-react";
+import {
+  useListAppointments,
+  useUpdateAppointment,
+  getListAppointmentsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Calendar as CalendarIcon,
   MapPin,
@@ -16,6 +42,10 @@ import {
   Download,
   Phone,
   Mail,
+  Check,
+  X as XIcon,
+  CalendarClock,
+  Loader2,
 } from "lucide-react";
 import {
   format,
@@ -134,7 +164,64 @@ function downloadICS(content: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function pad(n: number) {
+  return n.toString().padStart(2, "0");
+}
+function toLocalInput(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function AppointmentCard({ apt, compact = false }: { apt: any; compact?: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateAppointment = useUpdateAppointment();
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [refuseOpen, setRefuseOpen] = useState(false);
+  const [when, setWhen] = useState(() => toLocalInput(new Date(apt.scheduledAt)));
+  const [duration, setDuration] = useState<number>(apt.durationMinutes || 60);
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: getListAppointmentsQueryKey() });
+
+  const isPending = apt.status === "pending";
+  const isActive = apt.status !== "cancelled" && apt.status !== "completed";
+
+  const runUpdate = (data: Record<string, unknown>, successMsg: string, onDone?: () => void) => {
+    updateAppointment.mutate(
+      { id: apt.id, data: data as any },
+      {
+        onSuccess: () => {
+          invalidate();
+          toast({ title: successMsg });
+          onDone?.();
+        },
+        onError: () =>
+          toast({ variant: "destructive", title: "Erreur", description: "La mise à jour a échoué. Réessayez." }),
+      },
+    );
+  };
+
+  const handleConfirm = () =>
+    runUpdate({ status: "confirmed" }, "Rendez-vous confirmé — le client a été notifié par email.");
+
+  const handleRefuse = () =>
+    runUpdate({ status: "cancelled" }, "Rendez-vous refusé — le client a été notifié par email.", () =>
+      setRefuseOpen(false),
+    );
+
+  const handleReschedule = () => {
+    const scheduledAt = new Date(when);
+    if (Number.isNaN(scheduledAt.getTime())) {
+      toast({ variant: "destructive", title: "Date invalide", description: "Veuillez choisir une date et une heure valides." });
+      return;
+    }
+    runUpdate(
+      { scheduledAt: scheduledAt.toISOString(), durationMinutes: Number(duration) || 60 },
+      "Rendez-vous reprogrammé — le client a été notifié par email.",
+      () => setRescheduleOpen(false),
+    );
+  };
+
   return (
     <Card className="overflow-hidden border-l-4 border-l-accent">
       <CardContent className={compact ? "p-4" : "p-6"}>
@@ -248,9 +335,122 @@ function AppointmentCard({ apt, compact = false }: { apt: any; compact?: boolean
                 Apple
               </Button>
             </div>
+
+            {/* Management actions */}
+            {isActive && (
+              <div className="flex flex-wrap gap-1.5 border-t border-border pt-2 mt-1">
+                {isPending && (
+                  <Button
+                    size="sm"
+                    className="flex-1 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
+                    disabled={updateAppointment.isPending}
+                    onClick={handleConfirm}
+                  >
+                    <Check className="w-3 h-3" />
+                    Confirmer
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs gap-1 border-primary/30 text-primary"
+                  disabled={updateAppointment.isPending}
+                  onClick={() => {
+                    setWhen(toLocalInput(new Date(apt.scheduledAt)));
+                    setDuration(apt.durationMinutes || 60);
+                    setRescheduleOpen(true);
+                  }}
+                >
+                  <CalendarClock className="w-3 h-3" />
+                  Reprogrammer
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs gap-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  disabled={updateAppointment.isPending}
+                  onClick={() => setRefuseOpen(true)}
+                >
+                  <XIcon className="w-3 h-3" />
+                  Refuser
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
+
+      {/* Reschedule dialog */}
+      <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl text-primary">
+              Reprogrammer le rendez-vous
+            </DialogTitle>
+            <DialogDescription>
+              Choisissez un nouveau créneau. Le client sera notifié par email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Nouvelle date et heure</Label>
+              <Input
+                type="datetime-local"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Durée (minutes)</Label>
+              <Input
+                type="number"
+                min={15}
+                step={15}
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Un email avec le nouveau créneau sera envoyé à {apt.clientEmail || "le client"}.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleOpen(false)} disabled={updateAppointment.isPending}>
+              Annuler
+            </Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={handleReschedule} disabled={updateAppointment.isPending}>
+              {updateAppointment.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refuse confirmation */}
+      <AlertDialog open={refuseOpen} onOpenChange={setRefuseOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Refuser ce rendez-vous ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le rendez-vous sera annulé et un email d'annulation sera envoyé à{" "}
+              {apt.clientEmail || "le client"}. Cette action est définitive.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updateAppointment.isPending}>Retour</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              disabled={updateAppointment.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handleRefuse();
+              }}
+            >
+              Refuser le rendez-vous
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
