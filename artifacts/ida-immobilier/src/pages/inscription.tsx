@@ -49,16 +49,16 @@ export default function Inscription() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
+    <div className="min-h-screen bg-primary flex flex-col font-sans">
       <Navbar />
       <main className="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/">
-          <div className="flex justify-center mb-8 cursor-pointer bg-primary p-4 rounded-xl">
+          <div className="flex justify-center mb-8 cursor-pointer p-4">
             <img src={logo} alt="I.D.A Immobilier" className="h-12" />
           </div>
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-serif font-bold text-foreground">
+        <h2 className="mt-6 text-center text-3xl font-serif font-bold text-primary-foreground">
           Créer un compte
         </h2>
       </div>
