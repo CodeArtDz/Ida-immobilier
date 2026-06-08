@@ -21,7 +21,7 @@ export const COMPANY = {
   rcsCity: "Aix-en-Provence",
   rcs: TODO,
   tvaIntra: TODO,
-  publicationDirector: TODO, // nom du représentant légal
+  publicationDirector: "Amine Zitoun", // nom du représentant légal
   // Loi Hoguet (n° 70-9 du 2 janvier 1970)
   cartePro: TODO, // n° de carte professionnelle
   carteProType: "Transaction sur immeubles et fonds de commerce (T) et Gestion immobilière (G)",
@@ -37,10 +37,10 @@ export const COMPANY = {
 } as const;
 
 export const HOST = {
-  name: "Replit, Inc.",
-  address: "767 Bryant St. #203, San Francisco, CA 94107, États-Unis",
+  name: "Octenium.com",
+  address: "Alger, Algerie",
   phone: "+213 (0) 671 36 91 79", // téléphone de l'hébergeur (art. 6 III LCEN)
-  website: "https://replit.com",
+  website: "https://octenium.com/",
 } as const;
 
 export const LAST_UPDATED = "8 juin 2026";
