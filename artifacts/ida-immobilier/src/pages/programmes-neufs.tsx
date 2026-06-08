@@ -222,7 +222,7 @@ export default function ProgrammesNeufs() {
                       <span className="font-medium text-foreground">
                         Type :
                       </span>{" "}
-                      {p.type}
+                      {{"apartment":"Appartement","house":"Maison","villa":"Villa","land":"Terrain","commercial":"Local commercial","other":"Autre"}[p.type as string] ?? p.type}
                     </p>
                     <p>
                       <span className="font-medium text-foreground">

@@ -68,7 +68,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="ml-3 truncate">
               <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-sidebar-foreground/60 capitalize">{user?.role.replace('_', ' ')}</p>
+              <p className="text-xs text-sidebar-foreground/60">{({"superadmin":"Super Admin","admin":"Administrateur","agency_manager":"Directeur d'agence","agent":"Agent","client":"Client"} as Record<string,string>)[user?.role ?? ""] ?? user?.role}</p>
             </div>
           </div>
           <Button 

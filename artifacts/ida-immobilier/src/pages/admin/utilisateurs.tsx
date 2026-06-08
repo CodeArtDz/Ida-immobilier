@@ -42,7 +42,7 @@ export default function AdminUtilisateurs() {
                     <div className="text-xs text-muted-foreground">{user.email}</div>
                   </TableCell>
                   <TableCell>
-                    <span className="capitalize">{user.role.replace('_', ' ')}</span>
+                    <span>{({"superadmin":"Super Admin","admin":"Administrateur","agency_manager":"Directeur d'agence","agent":"Agent","client":"Client"} as Record<string,string>)[user.role] ?? user.role}</span>
                   </TableCell>
                   <TableCell>{user.agencyName || "-"}</TableCell>
                   <TableCell className="text-sm">

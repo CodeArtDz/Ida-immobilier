@@ -41,7 +41,7 @@ export default function AdminEstimations() {
                     <div className="text-xs text-muted-foreground">{est.email}</div>
                   </TableCell>
                   <TableCell>
-                    <div className="capitalize font-medium">{est.propertyType}</div>
+                    <div className="font-medium">{{"apartment":"Appartement","house":"Maison","villa":"Villa","land":"Terrain","commercial":"Local commercial","other":"Autre"}[est.propertyType as string] ?? est.propertyType}</div>
                     <div className="text-xs text-muted-foreground">{est.livingArea}m² • {est.rooms} pièces</div>
                   </TableCell>
                   <TableCell>

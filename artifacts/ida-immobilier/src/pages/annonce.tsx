@@ -321,8 +321,8 @@ export default function Annonce() {
                 <span className="bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold uppercase tracking-wider rounded-sm">
                   {isRental ? "À Louer" : "À Vendre"}
                 </span>
-                <span className="bg-accent text-accent-foreground px-3 py-1 text-sm font-semibold capitalize rounded-sm">
-                  {property.type}
+                <span className="bg-accent text-accent-foreground px-3 py-1 text-sm font-semibold rounded-sm">
+                  {({"apartment":"Appartement","house":"Maison","villa":"Villa","land":"Terrain","commercial":"Local commercial","garage":"Garage","other":"Autre"} as Record<string,string>)[property.type] ?? property.type}
                 </span>
               </div>
               <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">

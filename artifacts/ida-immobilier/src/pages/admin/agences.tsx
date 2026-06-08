@@ -48,7 +48,7 @@ export default function AdminAgences() {
                   <TableCell>
                     <span className={`px-2 py-1 rounded-sm text-xs font-semibold uppercase tracking-wider
                       ${agency.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {agency.status === 'active' ? 'Active' : 'Inactive'}
+                      {agency.status === 'active' ? 'Actif' : 'Inactif'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">

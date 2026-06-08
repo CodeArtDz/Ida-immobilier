@@ -48,7 +48,7 @@ export default function Alertes() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {search.type && <span className="text-xs bg-muted px-2 py-1 rounded-sm">{search.type}</span>}
+                  {search.type && <span className="text-xs bg-muted px-2 py-1 rounded-sm">{{"apartment":"Appartement","house":"Maison","villa":"Villa","land":"Terrain","commercial":"Local commercial","other":"Autre"}[search.type as string] ?? search.type}</span>}
                   {search.minPrice || search.maxPrice ? (
                     <span className="text-xs bg-muted px-2 py-1 rounded-sm">
                       {search.minPrice ? `${search.minPrice}€` : "0€"} - {search.maxPrice ? `${search.maxPrice}€` : "Max"}

@@ -4,6 +4,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Edit2, Eye, MoreHorizontal } from "lucide-react";
 import { Link } from "wouter";
 
+const PROPERTY_STATUS_LABEL: Record<string, string> = {
+  published: "Publié",
+  draft: "Brouillon",
+  sold: "Vendu",
+  rented: "Loué",
+  archived: "Archivé",
+  reserved: "Réservé",
+  pending: "En attente",
+};
+
+const PROPERTY_TYPE_LABEL: Record<string, string> = {
+  apartment: "Appartement",
+  house: "Maison",
+  villa: "Villa",
+  land: "Terrain",
+  commercial: "Local commercial",
+  other: "Autre",
+};
+
 export default function BiensList() {
   const { data: propertiesResponse, isLoading } = useListProperties();
 
@@ -42,7 +61,7 @@ export default function BiensList() {
                 <TableRow key={property.id}>
                   <TableCell className="font-mono text-xs">IDA-{property.id}</TableCell>
                   <TableCell className="font-medium max-w-[300px] truncate">{property.title}</TableCell>
-                  <TableCell className="capitalize">{property.type}</TableCell>
+                  <TableCell>{PROPERTY_TYPE_LABEL[property.type] ?? property.type}</TableCell>
                   <TableCell>{property.city}</TableCell>
                   <TableCell>
                     {property.salePrice 
@@ -56,7 +75,7 @@ export default function BiensList() {
                       ${property.status === 'published' ? 'bg-green-100 text-green-700' : 
                         property.status === 'draft' ? 'bg-gray-100 text-gray-700' : 
                         property.status === 'sold' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {property.status}
+                      {PROPERTY_STATUS_LABEL[property.status] ?? property.status}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
