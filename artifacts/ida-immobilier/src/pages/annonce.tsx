@@ -570,7 +570,6 @@ export default function Annonce() {
       {showVisite && (
         <VisiteModal property={property} onClose={() => setShowVisite(false)} />
       )}
-
       {/* Gallery Slider + thumbnails */}
       <div className="w-full relative">
         <PropertyGallery
@@ -620,7 +619,6 @@ export default function Annonce() {
           </div>
         </div>
       </div>
-
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main content */}
@@ -643,7 +641,7 @@ export default function Annonce() {
                     <Layers className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Surface Carrez</p>
+                    <p className="text-sm text-muted-foreground">Surface totale</p>
                     <p className="font-semibold text-lg">{(property as any).carrezArea} m²</p>
                   </div>
                 </div>
