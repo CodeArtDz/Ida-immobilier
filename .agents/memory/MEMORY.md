@@ -3,3 +3,4 @@
 - [Media upload architecture](media-upload.md) — multer + sharp upload endpoint, uploads served at /api/uploads/, watermarked files at uploads/watermarked/
 - [SEO score scans production](seo-spa-deployment.md) — Replit "Santé SEO" scores the published deployment, not dev; low score after dev SEO work = needs republish
 - [Testing auth-gated routes](testing-auth-routes.md) — live dev DB diverges from seed creds in replit.md; create a disposable scrypt admin (salt:hexkey) to e2e-test, then clean up
+- [French legal pages](legal-pages.md) — never fabricate FR agency legal identifiers (SIRET, RCS, carte pro, host phone…); leave them as TODO placeholders for the owner

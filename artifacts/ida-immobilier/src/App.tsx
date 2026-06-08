@@ -17,6 +17,10 @@ import Contact from "@/pages/contact";
 import Agences from "@/pages/agences";
 import ProgrammesNeufs from "@/pages/programmes-neufs";
 import APropos from "@/pages/a-propos";
+import MentionsLegales from "@/pages/mentions-legales";
+import Confidentialite from "@/pages/confidentialite";
+import CGU from "@/pages/cgu";
+import Honoraires from "@/pages/honoraires";
 import Connexion from "@/pages/connexion";
 import Inscription from "@/pages/inscription";
 import NotFound from "@/pages/not-found";
@@ -69,6 +73,10 @@ function Router() {
       <Route path="/nos-agences" component={() => <PublicRoute component={Agences} />} />
       <Route path="/programmes-neufs" component={() => <PublicRoute component={ProgrammesNeufs} />} />
       <Route path="/a-propos" component={() => <PublicRoute component={APropos} />} />
+      <Route path="/mentions-legales" component={() => <PublicRoute component={MentionsLegales} />} />
+      <Route path="/confidentialite" component={() => <PublicRoute component={Confidentialite} />} />
+      <Route path="/cgu" component={() => <PublicRoute component={CGU} />} />
+      <Route path="/honoraires" component={() => <PublicRoute component={Honoraires} />} />
       
       <Route path="/connexion" component={Connexion} />
       <Route path="/inscription" component={Inscription} />
