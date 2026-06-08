@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { NotificationBell } from "@/components/notification-bell";
 import logo from "@assets/full_logo_navbar_1780868246991.png";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -50,10 +51,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 min-h-0">
       {/* Sidebar */}
       <div className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border hidden md:flex flex-col">
-        <div className="h-20 flex items-center px-6 border-b border-sidebar-border bg-sidebar">
+        <div className="h-20 flex items-center justify-between px-6 border-b border-sidebar-border bg-sidebar">
           <Link href="/">
             <img src={logo} alt="I.D.A Immobilier" className="h-10 cursor-pointer" />
           </Link>
+          <NotificationBell triggerClassName="text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" />
         </div>
         
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
@@ -110,16 +112,19 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:hidden">
           <img src={logo} alt="I.D.A" className="h-8" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Menu"
-            aria-expanded={mobileOpen}
-            aria-controls="admin-mobile-nav"
-          >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Menu"
+              aria-expanded={mobileOpen}
+              aria-controls="admin-mobile-nav"
+            >
+              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </header>
 
         {mobileOpen && (

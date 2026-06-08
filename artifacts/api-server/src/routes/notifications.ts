@@ -23,7 +23,13 @@ router.get("/notifications", requireAuth, async (req, res) => {
 
 router.patch("/notifications/:id/read", requireAuth, async (req, res) => {
   try {
-    const [updated] = await db.update(notificationsTable).set({ isRead: true }).where(eq(notificationsTable.id, parseInt(req.params.id as string))).returning();
+    const user = (req as any).user;
+    const [updated] = await db
+      .update(notificationsTable)
+      .set({ isRead: true })
+      .where(and(eq(notificationsTable.id, parseInt(req.params.id as string)), eq(notificationsTable.userId, user.id)))
+      .returning();
+    if (!updated) { res.status(404).json({ error: "Notification non trouvée" }); return; }
     res.json(updated);
   } catch (err) {
     logger.error({ err }, "Mark read error");
