@@ -13,6 +13,8 @@ import {
   UsersRound,
   CircleUser
 } from "lucide-react";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 import logo from "@assets/full_logo_navbar_1780868246991.png";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -39,7 +41,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
+    <div className="min-h-screen bg-muted/30 flex flex-col font-sans">
+      <Navbar />
+      <div className="flex flex-1 min-h-0">
       {/* Sidebar */}
       <div className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border hidden md:flex flex-col">
         <div className="h-20 flex items-center px-6 border-b border-sidebar-border bg-sidebar">
@@ -109,6 +113,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 }

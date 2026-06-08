@@ -5,6 +5,8 @@ import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 import logo from "@assets/full_logo_navbar_1780868246991.png";
 
 export default function Inscription() {
@@ -47,7 +49,9 @@ export default function Inscription() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
+      <Navbar />
+      <main className="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/">
           <div className="flex justify-center mb-8 cursor-pointer bg-primary p-4 rounded-xl">
@@ -131,6 +135,8 @@ export default function Inscription() {
           </div>
         </div>
       </div>
+      </main>
+      <Footer />
     </div>
   );
 }
