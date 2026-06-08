@@ -84,13 +84,16 @@ export function Navbar() {
           variant="ghost"
           className="md:hidden text-primary-foreground"
           onClick={() => setMobileOpen((v) => !v)}
+          aria-label="Menu"
+          aria-expanded={mobileOpen}
+          aria-controls="primary-mobile-nav"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden bg-primary border-t border-primary-foreground/10 px-4 py-4 space-y-3">
+        <div id="primary-mobile-nav" className="md:hidden bg-primary border-t border-primary-foreground/10 px-4 py-4 space-y-3">
           {NAV_LINKS.map(({ href, label }) => (
             <Link
               key={href}

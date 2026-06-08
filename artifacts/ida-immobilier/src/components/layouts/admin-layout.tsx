@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,9 @@ import {
   Calculator,
   UserCog,
   UsersRound,
-  CircleUser
+  CircleUser,
+  Menu,
+  X
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -20,6 +23,7 @@ import logo from "@assets/full_logo_navbar_1780868246991.png";
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navigation = [
     { name: 'Tableau de bord', href: '/tableau-de-bord', icon: LayoutDashboard },
@@ -104,12 +108,57 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-card border-b border-border flex items-center justify-between px-8 md:hidden">
+        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:hidden">
           <img src={logo} alt="I.D.A" className="h-8" />
-          {/* Mobile menu toggle would go here */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Menu"
+            aria-expanded={mobileOpen}
+            aria-controls="admin-mobile-nav"
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
         </header>
-        
-        <main className="flex-1 overflow-y-auto p-8">
+
+        {mobileOpen && (
+          <div id="admin-mobile-nav" className="md:hidden bg-sidebar text-sidebar-foreground border-b border-sidebar-border px-3 py-3 space-y-1">
+            {navigation.map((item) => {
+              const isActive = location === item.href || (location.startsWith(item.href) && item.href !== '/tableau-de-bord');
+              return (
+                <Link key={item.name} href={item.href} onClick={() => setMobileOpen(false)}>
+                  <div className={`flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer transition-colors ${
+                    isActive
+                      ? 'bg-sidebar-accent text-sidebar-primary'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  }`}>
+                    <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/70'}`} />
+                    {item.name}
+                  </div>
+                </Link>
+              );
+            })}
+            <div className="pt-2 mt-2 border-t border-sidebar-border space-y-1">
+              <Link href="/tableau-de-bord/profil" onClick={() => setMobileOpen(false)}>
+                <div className="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer hover:bg-sidebar-accent/50">
+                  <CircleUser className="mr-3 h-5 w-5 text-sidebar-foreground/70" />
+                  Mon profil
+                </div>
+              </Link>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+                onClick={() => { logout(); window.location.href = "/"; }}
+              >
+                <LogOut className="mr-3 h-5 w-5 text-sidebar-foreground/70" />
+                Déconnexion
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {children}
         </main>
       </div>
