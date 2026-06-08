@@ -22,6 +22,7 @@ import Inscription from "@/pages/inscription";
 import NotFound from "@/pages/not-found";
 
 import ClientDashboard from "@/pages/client/dashboard";
+import ClientProfil from "@/pages/client/profil";
 import Favoris from "@/pages/client/favoris";
 import Alertes from "@/pages/client/alertes";
 import RendezVous from "@/pages/client/rendez-vous";
@@ -37,6 +38,7 @@ import AdminEstimations from "@/pages/admin/estimations";
 import AdminMessages from "@/pages/admin/messages";
 import AdminAgences from "@/pages/admin/agences";
 import AdminUtilisateurs from "@/pages/admin/utilisateurs";
+import AdminCRM from "@/pages/admin/crm";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +73,7 @@ function Router() {
       <Route path="/inscription" component={Inscription} />
 
       <Route path="/espace-client" component={() => <ProtectedRoute component={ClientDashboard} layout={ClientLayout} allowedRoles={['client']} />} />
+      <Route path="/espace-client/profil" component={() => <ProtectedRoute component={ClientProfil} layout={ClientLayout} allowedRoles={['client']} />} />
       <Route path="/espace-client/favoris" component={() => <ProtectedRoute component={Favoris} layout={ClientLayout} allowedRoles={['client']} />} />
       <Route path="/espace-client/alertes" component={() => <ProtectedRoute component={Alertes} layout={ClientLayout} allowedRoles={['client']} />} />
       <Route path="/espace-client/rendez-vous" component={() => <ProtectedRoute component={RendezVous} layout={ClientLayout} allowedRoles={['client']} />} />
@@ -84,6 +87,7 @@ function Router() {
       <Route path="/tableau-de-bord/rendez-vous" component={() => <ProtectedRoute component={AdminRendezVous} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/estimations" component={() => <ProtectedRoute component={AdminEstimations} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/messages" component={() => <ProtectedRoute component={AdminMessages} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
+      <Route path="/tableau-de-bord/crm" component={() => <ProtectedRoute component={AdminCRM} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager']} />} />
       <Route path="/tableau-de-bord/agences" component={() => <ProtectedRoute component={AdminAgences} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
       <Route path="/tableau-de-bord/utilisateurs" component={() => <ProtectedRoute component={AdminUtilisateurs} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
 

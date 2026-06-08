@@ -9,7 +9,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
 
   const navigation = [
-    { name: 'Mon Profil', href: '/espace-client', icon: User },
+    { name: 'Mon Espace', href: '/espace-client', icon: User },
+    { name: 'Mon Profil', href: '/espace-client/profil', icon: User },
     { name: 'Favoris', href: '/espace-client/favoris', icon: Heart },
     { name: 'Alertes', href: '/espace-client/alertes', icon: Bell },
     { name: 'Rendez-vous', href: '/espace-client/rendez-vous', icon: Calendar },

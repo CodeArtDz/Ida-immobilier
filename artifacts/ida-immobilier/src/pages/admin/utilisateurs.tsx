@@ -33,11 +33,10 @@ const ROLE_COLORS: Record<string, string> = {
 
 const ROLES_FOR_FILTER = [
   { key: "all", label: "Tous" },
-  { key: "admin", label: "Admins" },
   { key: "superadmin", label: "Super Admins" },
+  { key: "admin", label: "Admins" },
   { key: "agency_manager", label: "Directeurs" },
   { key: "agent", label: "Agents" },
-  { key: "client", label: "Clients" },
 ];
 
 const STAFF_ROLES = [
@@ -45,7 +44,6 @@ const STAFF_ROLES = [
   { value: "admin", label: "Administrateur" },
   { value: "agency_manager", label: "Directeur d'agence" },
   { value: "agent", label: "Agent" },
-  { value: "client", label: "Client" },
 ];
 
 const EMPTY_FORM = {
@@ -60,7 +58,8 @@ const EMPTY_FORM = {
 
 export default function AdminUtilisateurs() {
   const queryClient = useQueryClient();
-  const { data: users = [], isLoading } = useListUsers();
+  const { data: allUsers = [], isLoading } = useListUsers();
+  const users = allUsers.filter(u => u.role !== "client");
   const { data: agencies = [] } = useListAgencies();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();

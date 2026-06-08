@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { propertiesTable, leadsTable, appointmentsTable, estimationsTable, activityLogsTable, usersTable } from "@workspace/db";
-import { eq, gte, count, avg, desc, sql } from "drizzle-orm";
+import { eq, gte, count, avg, desc, sql, isNotNull, ne } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 
@@ -116,6 +116,52 @@ router.get("/analytics/cities", async (_req, res) => {
     })));
   } catch (err) {
     logger.error({ err }, "City stats error");
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// GET /analytics/website
+router.get("/analytics/website", requireAuth, async (_req, res) => {
+  try {
+    const [
+      topProperties,
+      [totalViewsRow],
+      [seoTotal],
+      [seoWithTitle],
+      [seoWithDesc],
+      leadSources,
+    ] = await Promise.all([
+      db.select({ id: propertiesTable.id, title: propertiesTable.title, city: propertiesTable.city, viewCount: propertiesTable.viewCount, status: propertiesTable.status })
+        .from(propertiesTable).orderBy(desc(propertiesTable.viewCount)).limit(5),
+      db.select({ total: sql<number>`coalesce(sum(${propertiesTable.viewCount}),0)` }).from(propertiesTable),
+      db.select({ count: count() }).from(propertiesTable),
+      db.select({ count: count() }).from(propertiesTable).where(isNotNull(propertiesTable.metaTitle)),
+      db.select({ count: count() }).from(propertiesTable).where(isNotNull(propertiesTable.metaDescription)),
+      db.select({ source: leadsTable.source, count: count() }).from(leadsTable).groupBy(leadsTable.source).orderBy(desc(count())),
+    ]);
+
+    const seoTotalCount = seoTotal?.count ?? 0;
+    const seoTitleCount = seoWithTitle?.count ?? 0;
+    const seoDescCount = seoWithDesc?.count ?? 0;
+
+    res.json({
+      totalViews: Number(totalViewsRow?.total ?? 0),
+      topProperties,
+      seo: {
+        total: seoTotalCount,
+        withTitle: seoTitleCount,
+        withDescription: seoDescCount,
+        titlePercent: seoTotalCount > 0 ? Math.round((seoTitleCount / seoTotalCount) * 100) : 0,
+        descPercent: seoTotalCount > 0 ? Math.round((seoDescCount / seoTotalCount) * 100) : 0,
+      },
+      leadSources: leadSources.map(s => ({
+        source: s.source,
+        label: { property_inquiry: "Demande bien", estimation_request: "Estimation", contact_form: "Formulaire", manual: "Manuel" }[s.source] ?? s.source,
+        count: s.count,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err }, "Website analytics error");
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

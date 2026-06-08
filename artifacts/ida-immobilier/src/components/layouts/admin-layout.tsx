@@ -9,7 +9,8 @@ import {
   MessageSquare, 
   LogOut, 
   Calculator,
-  UserCog
+  UserCog,
+  UsersRound
 } from "lucide-react";
 import logo from "@assets/full_logo_navbar_1780868246991.png";
 
@@ -26,6 +27,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { name: 'Messages', href: '/tableau-de-bord/messages', icon: MessageSquare },
   ];
 
+  if (user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'agency_manager') {
+    navigation.push({ name: 'CRM', href: '/tableau-de-bord/crm', icon: UsersRound });
+  }
   if (user?.role === 'superadmin' || user?.role === 'admin') {
     navigation.push(
       { name: 'Agences', href: '/tableau-de-bord/agences', icon: Building2 },
