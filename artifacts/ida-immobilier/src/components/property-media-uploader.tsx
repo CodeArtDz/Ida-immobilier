@@ -95,6 +95,31 @@ export default function PropertyMediaUploader({
     [propertyId, toast, onCountChange],
   );
 
+  const handleSetMain = async (mediaId: number) => {
+    try {
+      const res = await fetch(
+        `/api/properties/${propertyId}/media/${mediaId}/main`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${getToken()}` },
+        },
+      );
+      if (!res.ok) throw new Error();
+      const updated = (await res.json()) as MediaItem[];
+      setMedia(updated);
+      toast({
+        title: "Photo principale mise à jour",
+        description: "Cette photo apparaîtra en premier sur l'annonce.",
+      });
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Impossible de définir la photo principale",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDelete = async (mediaId: number) => {
     try {
       const res = await fetch(
@@ -200,7 +225,8 @@ export default function PropertyMediaUploader({
                   className="w-full h-full object-cover"
                 />
                 {i === 0 && (
-                  <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded font-semibold">
+                  <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded font-semibold flex items-center gap-1">
+                    <Star className="w-2.5 h-2.5 fill-current" />
                     Principale
                   </div>
                 )}
@@ -216,6 +242,16 @@ export default function PropertyMediaUploader({
                 >
                   <X className="w-3 h-3" />
                 </button>
+                {i !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSetMain(item.id)}
+                    className="absolute bottom-1.5 right-1.5 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded font-medium opacity-0 group-hover:opacity-100 transition-opacity shadow flex items-center gap-1 hover:bg-primary/90"
+                  >
+                    <Star className="w-2.5 h-2.5" />
+                    Définir principale
+                  </button>
+                )}
               </div>
             ))}
           </div>

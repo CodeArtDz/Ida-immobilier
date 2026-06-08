@@ -392,6 +392,32 @@ paths:
         "204":
           description: Deleted
 
+  /properties/{id}/media/{mediaId}/main:
+    post:
+      operationId: setMainPropertyMedia
+      tags: [media]
+      summary: Set a photo as the main image for a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: mediaId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated media list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PropertyMedia"
+
   /properties/{id}/assign:
     post:
       operationId: assignProperty

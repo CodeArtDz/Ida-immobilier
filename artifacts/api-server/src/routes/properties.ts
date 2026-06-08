@@ -554,6 +554,58 @@ router.delete("/properties/:id/media/:mediaId", requireAuth, async (req, res) =>
   }
 });
 
+// POST /properties/:id/media/:mediaId/main — set a photo as the main image
+router.post("/properties/:id/media/:mediaId/main", requireAuth, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id as string);
+    const mediaId = parseInt(req.params.mediaId as string);
+
+    const updated = await db.transaction(async (tx) => {
+      const all = await tx
+        .select()
+        .from(propertyMediaTable)
+        .where(eq(propertyMediaTable.propertyId, propertyId))
+        .orderBy(propertyMediaTable.order);
+
+      const target = all.find((m) => m.id === mediaId);
+      if (!target) {
+        return { error: "not_found" as const };
+      }
+      if (target.type !== "photo") {
+        return { error: "not_photo" as const };
+      }
+
+      const reordered = [target, ...all.filter((m) => m.id !== mediaId)];
+      for (let idx = 0; idx < reordered.length; idx++) {
+        await tx
+          .update(propertyMediaTable)
+          .set({ order: idx })
+          .where(eq(propertyMediaTable.id, reordered[idx]!.id));
+      }
+
+      return await tx
+        .select()
+        .from(propertyMediaTable)
+        .where(eq(propertyMediaTable.propertyId, propertyId))
+        .orderBy(propertyMediaTable.order);
+    });
+
+    if ("error" in updated) {
+      if (updated.error === "not_found") {
+        res.status(404).json({ error: "Média introuvable" });
+      } else {
+        res.status(400).json({ error: "Seule une photo peut être définie comme principale" });
+      }
+      return;
+    }
+
+    res.json(updated);
+  } catch (err) {
+    logger.error({ err }, "Set main media error");
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 // POST /properties/:id/assign — change the responsible agent (permanently or temporarily)
 router.post("/properties/:id/assign", requireAuth, requireRole("superadmin", "admin", "agency_manager"), async (req, res) => {
   try {

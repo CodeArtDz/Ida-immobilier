@@ -1268,6 +1268,78 @@ export const useDeletePropertyMedia = <TError = ErrorType<unknown>,
       return useMutation(getDeletePropertyMediaMutationOptions(options));
     }
 
+export const getSetMainPropertyMediaUrl = (id: number,
+    mediaId: number,) => {
+
+
+
+
+  return `/api/properties/${id}/media/${mediaId}/main`
+}
+
+/**
+ * @summary Set a photo as the main image for a property
+ */
+export const setMainPropertyMedia = async (id: number,
+    mediaId: number, options?: RequestInit): Promise<PropertyMedia[]> => {
+
+  return customFetch<PropertyMedia[]>(getSetMainPropertyMediaUrl(id,mediaId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSetMainPropertyMediaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMainPropertyMedia>>, TError,{id: number;mediaId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setMainPropertyMedia>>, TError,{id: number;mediaId: number}, TContext> => {
+
+const mutationKey = ['setMainPropertyMedia'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMainPropertyMedia>>, {id: number;mediaId: number}> = (props) => {
+          const {id,mediaId} = props ?? {};
+
+          return  setMainPropertyMedia(id,mediaId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetMainPropertyMediaMutationResult = NonNullable<Awaited<ReturnType<typeof setMainPropertyMedia>>>
+
+    export type SetMainPropertyMediaMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Set a photo as the main image for a property
+ */
+export const useSetMainPropertyMedia = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMainPropertyMedia>>, TError,{id: number;mediaId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setMainPropertyMedia>>,
+        TError,
+        {id: number;mediaId: number},
+        TContext
+      > => {
+      return useMutation(getSetMainPropertyMediaMutationOptions(options));
+    }
+
 export const getAssignPropertyUrl = (id: number,) => {
 
 

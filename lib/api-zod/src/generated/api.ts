@@ -744,6 +744,27 @@ export const DeletePropertyMediaParams = zod.object({
 
 
 /**
+ * @summary Set a photo as the main image for a property
+ */
+export const SetMainPropertyMediaParams = zod.object({
+  "id": zod.coerce.number(),
+  "mediaId": zod.coerce.number()
+})
+
+export const SetMainPropertyMediaResponseItem = zod.object({
+  "id": zod.number(),
+  "propertyId": zod.number(),
+  "url": zod.string(),
+  "watermarkedUrl": zod.string().nullish(),
+  "type": zod.enum(['photo', 'video', 'floor_plan', 'pdf']),
+  "caption": zod.string().nullish(),
+  "order": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const SetMainPropertyMediaResponse = zod.array(SetMainPropertyMediaResponseItem)
+
+
+/**
  * @summary Temporarily assign a property to another agent
  */
 export const AssignPropertyParams = zod.object({
