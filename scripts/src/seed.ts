@@ -28,12 +28,12 @@ async function seed() {
   const [agency1, agency2] = await db.insert(agenciesTable).values([
     {
       name: "I.D.A Immobilier - Marignane",
-      email: "contact@ida-immobilier.fr",
-      phone: "04 42 00 00 01",
-      address: "12 Avenue des Marronniers",
+      email: "contact@ida-immobilier.com",
+      phone: "+33 6 66 37 17 37",
+      address: "16 av de la 1ère armée française",
       city: "Marignane",
       postalCode: "13700",
-      website: "https://www.ida-immobilier.fr",
+      website: "https://www.ida-immobilier.com",
       status: "active",
     },
     {

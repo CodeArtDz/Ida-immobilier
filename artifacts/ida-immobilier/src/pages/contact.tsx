@@ -72,7 +72,7 @@ export default function Contact() {
                   <MapPin className="w-6 h-6 text-accent mr-4 shrink-0 mt-1" />
                   <div>
                     <h3 className="font-semibold mb-1">Siège social</h3>
-                    <p className="text-muted-foreground">12 avenue du Commandant Rolland<br/>13700 Marignane<br/>France</p>
+                    <p className="text-muted-foreground">16 av de la 1ère armée française<br/>13700 Marignane<br/>France</p>
                   </div>
                 </div>
                 
@@ -80,7 +80,7 @@ export default function Contact() {
                   <Phone className="w-6 h-6 text-accent mr-4 shrink-0 mt-1" />
                   <div>
                     <h3 className="font-semibold mb-1">Téléphone</h3>
-                    <p className="text-muted-foreground">06 66 37 17 37</p>
+                    <p className="text-muted-foreground">+33 6 66 37 17 37</p>
                   </div>
                 </div>
                 
@@ -88,7 +88,7 @@ export default function Contact() {
                   <Mail className="w-6 h-6 text-accent mr-4 shrink-0 mt-1" />
                   <div>
                     <h3 className="font-semibold mb-1">Email</h3>
-                    <p className="text-muted-foreground">contact@ida-immobilier.fr</p>
+                    <p className="text-muted-foreground">contact@ida-immobilier.com</p>
                   </div>
                 </div>
 
