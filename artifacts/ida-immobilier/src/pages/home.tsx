@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, Home as HomeIcon, KeyRound, Calculator, Handshake, MapPin, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,52 @@ import estimationVilla from "@/assets/images/estimation-villa.png";
 import heroVideo from "@assets/18682412-uhd_3840_2160_25fps_1780936165688.mp4";
 import { useSeo } from "@/hooks/use-seo";
 import { useJsonLd } from "@/hooks/use-json-ld";
+
+const SERVICES = [
+  {
+    icon: HomeIcon,
+    title: "Vente Immobilière",
+    description:
+      "Nous vous accompagnons dans la vente de votre bien avec une expertise locale et une stratégie de diffusion optimisée pour maximiser votre prix de vente.",
+    cta: "Mettre en vente",
+    href: "/estimation",
+  },
+  {
+    icon: KeyRound,
+    title: "Location & Gestion",
+    description:
+      "Confiez-nous la location et la gestion de votre patrimoine immobilier. Nous sélectionnons les meilleurs locataires et gérons votre bien avec rigueur.",
+    cta: "Louer mon bien",
+    href: "/contact",
+  },
+  {
+    icon: Calculator,
+    title: "Estimation Gratuite",
+    description:
+      "Obtenez une estimation précise de votre bien en quelques minutes. Notre outil analyse le marché local pour vous donner une évaluation juste et réaliste.",
+    cta: "M'estimer",
+    href: "/estimation",
+  },
+  {
+    icon: Handshake,
+    title: "Accompagnement Acheteur",
+    description:
+      "Notre équipe d'experts vous guide à chaque étape de votre projet d'achat : recherche, visites, négociation, financement et signature.",
+    cta: "Nous contacter",
+    href: "/contact",
+  },
+] as const;
+
+const CITIES = [
+  "Marseille",
+  "Aix-en-Provence",
+  "Marignane",
+  "Aubagne",
+  "Martigues",
+  "Vitrolles",
+  "Cassis",
+  "La Ciotat",
+] as const;
 
 export default function Home() {
   const { data: featuredProperties, isLoading } = useListFeaturedProperties();
@@ -127,6 +173,54 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Services */}
+      <section className="py-24 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
+            <p className="text-accent font-semibold uppercase tracking-widest text-xs sm:text-sm mb-4">
+              Services
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary mb-4">
+              Votre Partenaire Immobilier de Confiance
+            </h2>
+            <div className="w-24 h-1 bg-accent mx-auto mb-6"></div>
+            <p className="text-muted-foreground">
+              I.D.A Immobilier accompagne particuliers et investisseurs dans tous leurs projets immobiliers en Provence, grâce à l'expertise de notre équipe de plus de 20 ans dans le domaine.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {SERVICES.map((service, i) => (
+              <motion.div
+                key={service.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="group bg-background rounded-xl p-8 border border-border shadow-sm hover:shadow-md transition-shadow flex flex-col"
+              >
+                <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mb-6 group-hover:bg-accent/20 transition-colors">
+                  <service.icon className="w-7 h-7 text-accent" />
+                </div>
+                <h3 className="font-serif text-xl font-bold text-primary mb-3">
+                  {service.title}
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-1">
+                  {service.description}
+                </p>
+                <Link
+                  href={service.href}
+                  className="inline-flex items-center gap-1.5 text-accent font-semibold text-sm hover:gap-2.5 transition-all"
+                >
+                  {service.cta}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Featured Properties */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
@@ -155,6 +249,56 @@ export default function Home() {
               Aucun bien mis en avant pour le moment.
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Secteurs / Cities */}
+      <section className="py-24 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
+            <p className="text-accent font-semibold uppercase tracking-widest text-xs sm:text-sm mb-4">
+              Nos secteurs
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary mb-4">
+              Immobilier par Ville
+            </h2>
+            <div className="w-24 h-1 bg-accent mx-auto mb-6"></div>
+            <p className="text-muted-foreground">
+              Découvrez notre sélection de biens dans les villes les plus prisées des Bouches-du-Rhône et de la Provence.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {CITIES.map((city, i) => (
+              <motion.div
+                key={city}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+              >
+                <Link
+                  href={`/acheter?city=${encodeURIComponent(city)}`}
+                  className="group flex items-center gap-3 bg-background rounded-xl px-5 py-4 border border-border shadow-sm hover:border-accent hover:shadow-md transition-all"
+                >
+                  <MapPin className="w-5 h-5 text-accent shrink-0" />
+                  <span className="font-serif font-semibold text-primary group-hover:text-accent transition-colors">
+                    {city}
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Button
+              asChild
+              size="lg"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 font-serif text-base px-8"
+            >
+              <Link href="/acheter">Voir tous nos biens disponibles</Link>
+            </Button>
+          </div>
         </div>
       </section>
 

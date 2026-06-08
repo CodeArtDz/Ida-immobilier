@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearch } from "wouter";
 import { useListProperties } from "@workspace/api-client-react";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyMap } from "@/components/property-map";
@@ -42,7 +43,10 @@ export default function Acheter() {
     ],
   });
 
-  const [city, setCity] = useState("");
+  const searchString = useSearch();
+  const [city, setCity] = useState(
+    () => new URLSearchParams(searchString).get("city") ?? "",
+  );
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [type, setType] = useState("all");
