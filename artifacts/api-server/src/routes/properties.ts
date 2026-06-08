@@ -16,6 +16,7 @@ import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
 import { applyWatermark } from "../lib/watermark";
+import { geocodeAddress, hasValidCoords } from "../lib/geocode";
 
 const UPLOADS_DIR = "/home/runner/workspace/artifacts/api-server/uploads";
 
@@ -321,8 +322,29 @@ router.post("/properties", requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const data = req.body;
+
+    // Auto-geocode the address into map coordinates when none were provided.
+    let { latitude, longitude } = data;
+    if (!hasValidCoords(latitude, longitude)) {
+      const geo = await geocodeAddress({
+        address: data.address,
+        postalCode: data.postalCode,
+        city: data.city,
+        country: data.country,
+      });
+      if (geo) {
+        latitude = geo.latitude;
+        longitude = geo.longitude;
+        req.log.info({ city: data.city, postalCode: data.postalCode }, "Geocoded new property address");
+      } else {
+        req.log.warn({ city: data.city, postalCode: data.postalCode }, "Could not geocode new property address");
+      }
+    }
+
     const [property] = await db.insert(propertiesTable).values({
       ...data,
+      latitude,
+      longitude,
       ownerAgentId: user.id,
       currentAgentId: user.id,
       agencyId: data.agencyId || user.agencyId,
@@ -347,7 +369,40 @@ router.post("/properties", requireAuth, async (req, res) => {
 router.patch("/properties/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id as string);
-    const [updated] = await db.update(propertiesTable).set({ ...req.body, updatedAt: new Date() }).where(eq(propertiesTable.id, id)).returning();
+    const data = { ...req.body };
+
+    // Re-geocode when address fields change but valid coordinates weren't sent.
+    const addressChanged =
+      data.address !== undefined ||
+      data.postalCode !== undefined ||
+      data.city !== undefined ||
+      data.country !== undefined;
+    if (addressChanged && !hasValidCoords(data.latitude, data.longitude)) {
+      const [existing] = await db
+        .select({
+          address: propertiesTable.address,
+          postalCode: propertiesTable.postalCode,
+          city: propertiesTable.city,
+          country: propertiesTable.country,
+        })
+        .from(propertiesTable)
+        .where(eq(propertiesTable.id, id));
+      // Verify the property exists before spending an external geocode request.
+      if (!existing) { res.status(404).json({ error: "Bien non trouvé" }); return; }
+      const geo = await geocodeAddress({
+        address: data.address ?? existing.address,
+        postalCode: data.postalCode ?? existing.postalCode,
+        city: data.city ?? existing.city,
+        country: data.country ?? existing.country,
+      });
+      if (geo) {
+        data.latitude = geo.latitude;
+        data.longitude = geo.longitude;
+        req.log.info({ id }, "Re-geocoded property address on update");
+      }
+    }
+
+    const [updated] = await db.update(propertiesTable).set({ ...data, updatedAt: new Date() }).where(eq(propertiesTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Bien non trouvé" }); return; }
     res.json({ ...updated, salePrice: updated.salePrice ? parseFloat(updated.salePrice) : null, rentalPrice: updated.rentalPrice ? parseFloat(updated.rentalPrice) : null, agentName: null, agentPhone: null, agentEmail: null, agentAvatarUrl: null, agencyName: null, mainImageUrl: null, mediaCount: 0 });
   } catch (err) {
