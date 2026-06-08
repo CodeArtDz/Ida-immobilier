@@ -35,21 +35,30 @@ const DPE_OPTIONS = ["A", "B", "C", "D", "E", "F", "G"];
 const ORIENTATION_OPTIONS = ["Nord", "Nord-Est", "Est", "Sud-Est", "Sud", "Sud-Ouest", "Ouest", "Nord-Ouest"];
 const HEATING_OPTIONS = [
   "Individuel gaz", "Collectif gaz", "Électrique", "Pompe à chaleur",
-  "Fuel", "Bois / Pellets", "Géothermie", "Solaire",
+  "Air / Électrique - individuel", "Fuel", "Bois / Pellets", "Géothermie", "Solaire",
+];
+const KITCHEN_OPTIONS = [
+  "Américaine équipée", "Américaine non équipée", "Séparée équipée",
+  "Séparée non équipée", "Coin cuisine", "Cuisine d'été",
+];
+const WATER_OPTIONS = ["Individuel", "Collectif"];
+const SANITATION_OPTIONS = [
+  "Tout à l'égout", "Fosse septique", "Assainissement individuel", "Micro-station",
 ];
 
 const EQUIPMENT = [
   { key: "hasTerrace", label: "Terrasse" },
   { key: "hasBalcony", label: "Balcon" },
-  { key: "hasGarden", label: "Jardin" },
+  { key: "hasGarden", label: "Jardin privatif" },
   { key: "hasPool", label: "Piscine" },
-  { key: "hasGarage", label: "Garage" },
+  { key: "hasGarage", label: "Garage / Box" },
   { key: "hasParking", label: "Parking" },
   { key: "hasCellar", label: "Cave" },
   { key: "hasElevator", label: "Ascenseur" },
   { key: "hasAirConditioning", label: "Climatisation" },
   { key: "hasFiber", label: "Fibre optique" },
   { key: "hasFireplace", label: "Cheminée" },
+  { key: "hasDisabledAccess", label: "Accès handicapé" },
 ] as const;
 
 type EquipmentKey = typeof EQUIPMENT[number]["key"];
@@ -59,10 +68,12 @@ const EMPTY_FORM = {
   address: "", city: "", postalCode: "", department: "", residenceName: "",
   salePrice: "", rentalPrice: "", charges: "", agencyFees: "", taxeFonciere: "",
   livingArea: "", landArea: "", carrezArea: "",
-  rooms: "", bedrooms: "", bathrooms: "", toilets: "",
-  floor: "", totalFloors: "", yearBuilt: "",
-  orientation: "", heating: "",
-  dpeRating: "", gesRating: "", annualEnergyCost: "",
+  livingRoomArea: "", garageArea: "", gardenArea: "", terraceArea: "",
+  rooms: "", bedrooms: "", bathrooms: "", showerRooms: "", toilets: "",
+  floor: "", totalFloors: "", levels: "", indoorParking: "", outdoorParking: "",
+  yearBuilt: "",
+  orientation: "", heating: "", kitchen: "", water: "", sanitation: "",
+  dpeRating: "", gesRating: "", energyConsumption: "", gesEmissions: "", annualEnergyCost: "",
   shortDescription: "", fullDescription: "",
   metaTitle: "", metaDescription: "",
 };
@@ -86,6 +97,7 @@ export default function EditBien() {
     hasTerrace: false, hasBalcony: false, hasGarden: false, hasPool: false,
     hasGarage: false, hasParking: false, hasCellar: false, hasElevator: false,
     hasAirConditioning: false, hasFiber: false, hasFireplace: false,
+    hasDisabledAccess: false,
   });
 
   useEffect(() => {
@@ -108,17 +120,30 @@ export default function EditBien() {
         livingArea: p.livingArea?.toString() || "",
         landArea: p.landArea?.toString() || "",
         carrezArea: p.carrezArea?.toString() || "",
+        livingRoomArea: p.livingRoomArea?.toString() || "",
+        garageArea: p.garageArea?.toString() || "",
+        gardenArea: p.gardenArea?.toString() || "",
+        terraceArea: p.terraceArea?.toString() || "",
         rooms: p.rooms?.toString() || "",
         bedrooms: p.bedrooms?.toString() || "",
         bathrooms: p.bathrooms?.toString() || "",
+        showerRooms: p.showerRooms?.toString() || "",
         toilets: p.toilets?.toString() || "",
         floor: p.floor?.toString() || "",
         totalFloors: p.totalFloors?.toString() || "",
+        levels: p.levels?.toString() || "",
+        indoorParking: p.indoorParking?.toString() || "",
+        outdoorParking: p.outdoorParking?.toString() || "",
         yearBuilt: p.yearBuilt?.toString() || "",
         orientation: p.orientation || "",
         heating: p.heating || "",
+        kitchen: p.kitchen || "",
+        water: p.water || "",
+        sanitation: p.sanitation || "",
         dpeRating: p.dpeRating || "",
         gesRating: p.gesRating || "",
+        energyConsumption: p.energyConsumption?.toString() || "",
+        gesEmissions: p.gesEmissions?.toString() || "",
         annualEnergyCost: p.annualEnergyCost?.toString() || "",
         shortDescription: p.shortDescription || "",
         fullDescription: p.fullDescription || "",
@@ -137,6 +162,7 @@ export default function EditBien() {
         hasAirConditioning: !!p.hasAirConditioning,
         hasFiber: !!p.hasFiber,
         hasFireplace: !!(p as any).hasFireplace,
+        hasDisabledAccess: !!(p as any).hasDisabledAccess,
       });
     }
   }, [property]);
@@ -172,17 +198,30 @@ export default function EditBien() {
           livingArea: num(formData.livingArea),
           landArea: num(formData.landArea),
           carrezArea: num(formData.carrezArea),
+          livingRoomArea: num(formData.livingRoomArea),
+          garageArea: num(formData.garageArea),
+          gardenArea: num(formData.gardenArea),
+          terraceArea: num(formData.terraceArea),
           rooms: int(formData.rooms),
           bedrooms: int(formData.bedrooms),
           bathrooms: int(formData.bathrooms),
+          showerRooms: int(formData.showerRooms),
           toilets: int(formData.toilets),
           floor: int(formData.floor),
           totalFloors: int(formData.totalFloors),
+          levels: int(formData.levels),
+          indoorParking: int(formData.indoorParking),
+          outdoorParking: int(formData.outdoorParking),
           yearBuilt: int(formData.yearBuilt),
           orientation: formData.orientation || undefined,
           heating: formData.heating || undefined,
+          kitchen: formData.kitchen || undefined,
+          water: formData.water || undefined,
+          sanitation: formData.sanitation || undefined,
           dpeRating: formData.dpeRating || undefined,
           gesRating: formData.gesRating || undefined,
+          energyConsumption: num(formData.energyConsumption),
+          gesEmissions: num(formData.gesEmissions),
           annualEnergyCost: num(formData.annualEnergyCost),
           ...equipment,
           shortDescription: formData.shortDescription || undefined,
@@ -311,6 +350,22 @@ export default function EditBien() {
               <Input type="number" value={formData.landArea} onChange={(e) => set("landArea", e.target.value)} />
             </div>
             <div>
+              <label className="block text-sm font-medium mb-1.5">Surface séjour (m²)</label>
+              <Input type="number" value={formData.livingRoomArea} onChange={(e) => set("livingRoomArea", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Surface garage (m²)</label>
+              <Input type="number" value={formData.garageArea} onChange={(e) => set("garageArea", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Surface jardin (m²)</label>
+              <Input type="number" value={formData.gardenArea} onChange={(e) => set("gardenArea", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Surface terrasse (m²)</label>
+              <Input type="number" value={formData.terraceArea} onChange={(e) => set("terraceArea", e.target.value)} />
+            </div>
+            <div>
               <label className="block text-sm font-medium mb-1.5">Pièces</label>
               <Input type="number" value={formData.rooms} onChange={(e) => set("rooms", e.target.value)} />
             </div>
@@ -319,11 +374,15 @@ export default function EditBien() {
               <Input type="number" value={formData.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Salles de bains</label>
+              <label className="block text-sm font-medium mb-1.5">Salles de bain</label>
               <Input type="number" value={formData.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Sanitaires (WC)</label>
+              <label className="block text-sm font-medium mb-1.5">Salles d'eau</label>
+              <Input type="number" value={formData.showerRooms} onChange={(e) => set("showerRooms", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">WC</label>
               <Input type="number" value={formData.toilets} onChange={(e) => set("toilets", e.target.value)} />
             </div>
             <div>
@@ -335,11 +394,23 @@ export default function EditBien() {
               <Input type="number" value={formData.totalFloors} onChange={(e) => set("totalFloors", e.target.value)} />
             </div>
             <div>
+              <label className="block text-sm font-medium mb-1.5">Nombre de niveaux</label>
+              <Input type="number" value={formData.levels} onChange={(e) => set("levels", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Parkings intérieur</label>
+              <Input type="number" value={formData.indoorParking} onChange={(e) => set("indoorParking", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Parkings extérieur</label>
+              <Input type="number" value={formData.outdoorParking} onChange={(e) => set("outdoorParking", e.target.value)} />
+            </div>
+            <div>
               <label className="block text-sm font-medium mb-1.5">Année de construction</label>
               <Input type="number" value={formData.yearBuilt} onChange={(e) => set("yearBuilt", e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Orientation</label>
+              <label className="block text-sm font-medium mb-1.5">Exposition</label>
               <Select value={formData.orientation || ""} onValueChange={(v) => set("orientation", v)}>
                 <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                 <SelectContent>
@@ -353,6 +424,33 @@ export default function EditBien() {
                 <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                 <SelectContent>
                   {HEATING_OPTIONS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Cuisine</label>
+              <Select value={formData.kitchen || ""} onValueChange={(v) => set("kitchen", v)}>
+                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                <SelectContent>
+                  {KITCHEN_OPTIONS.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Eau</label>
+              <Select value={formData.water || ""} onValueChange={(v) => set("water", v)}>
+                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                <SelectContent>
+                  {WATER_OPTIONS.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Assainissement</label>
+              <Select value={formData.sanitation || ""} onValueChange={(v) => set("sanitation", v)}>
+                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                <SelectContent>
+                  {SANITATION_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -403,6 +501,14 @@ export default function EditBien() {
                   {DPE_OPTIONS.map((d) => <SelectItem key={d} value={d}>Classe {d}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Consommation énergétique (kWh/m²/an)</label>
+              <Input type="number" value={formData.energyConsumption} onChange={(e) => set("energyConsumption", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Émissions GES (kg eqCO₂/m²/an)</label>
+              <Input type="number" value={formData.gesEmissions} onChange={(e) => set("gesEmissions", e.target.value)} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Coût annuel énergie (€)</label>

@@ -38,6 +38,7 @@ import {
   Wind,
   Wifi,
   Flame,
+  Accessibility,
   ArrowUpDown,
 } from "lucide-react";
 import property1 from "@/assets/images/property-1.png";
@@ -718,6 +719,40 @@ export default function Annonce() {
               )}
             </div>
 
+            {(() => {
+              const details = [
+                { label: "Surface séjour", value: (property as any).livingRoomArea, suffix: " m²" },
+                { label: "Surface garage", value: (property as any).garageArea, suffix: " m²" },
+                { label: "Surface jardin", value: (property as any).gardenArea, suffix: " m²" },
+                { label: "Surface terrasse", value: (property as any).terraceArea, suffix: " m²" },
+                { label: "Salles d'eau", value: (property as any).showerRooms, suffix: "" },
+                { label: "WC", value: (property as any).toilets, suffix: "" },
+                { label: "Nombre de niveaux", value: (property as any).levels, suffix: "" },
+                { label: "Parkings intérieur", value: (property as any).indoorParking, suffix: "" },
+                { label: "Parkings extérieur", value: (property as any).outdoorParking, suffix: "" },
+                { label: "Cuisine", value: (property as any).kitchen, suffix: "" },
+                { label: "Eau", value: (property as any).water, suffix: "" },
+                { label: "Assainissement", value: (property as any).sanitation, suffix: "" },
+              ].filter((d) => d.value !== null && d.value !== undefined && d.value !== "");
+
+              return details.length > 0 ? (
+                <div>
+                  <h2 className="font-serif text-2xl font-bold text-primary mb-6">Détails du bien</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                    {details.map(({ label, value, suffix }) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between py-2 border-b border-border/60"
+                      >
+                        <span className="text-muted-foreground">{label}</span>
+                        <span className="font-medium">{value}{suffix}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
             <div>
               <h2 className="font-serif text-2xl font-bold text-primary mb-6">Description</h2>
               <div className="prose prose-lg text-foreground/80 max-w-none">
@@ -744,6 +779,7 @@ export default function Annonce() {
                   { key: "hasAirConditioning", label: "Climatisation", Icon: Wind },
                   { key: "hasFiber", label: "Fibre optique", Icon: Wifi },
                   { key: "hasFireplace", label: "Cheminée", Icon: Flame },
+                  { key: "hasDisabledAccess", label: "Accès handicapé", Icon: Accessibility },
                 ].filter(({ key }) => !!(property as any)[key]);
 
                 return features.length > 0 ? (
@@ -766,7 +802,9 @@ export default function Annonce() {
               })()}
             </div>
 
-            {(property.dpeRating || property.gesRating) && (
+            {(property.dpeRating || property.gesRating ||
+              (property as any).energyConsumption != null ||
+              (property as any).gesEmissions != null) && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-primary mb-6">
                   Diagnostic de Performance Énergétique
@@ -786,6 +824,19 @@ export default function Annonce() {
                       >
                         {property.dpeRating}
                       </div>
+                      {(property as any).energyConsumption != null && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {(property as any).energyConsumption} kWh/m²/an
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {!property.dpeRating && (property as any).energyConsumption != null && (
+                    <div className="flex-1 max-w-[200px]">
+                      <div className="text-sm font-semibold mb-2">Consommation énergétique</div>
+                      <p className="font-semibold text-lg">
+                        {(property as any).energyConsumption} kWh/m²/an
+                      </p>
                     </div>
                   )}
                   {property.gesRating && (
@@ -802,6 +853,19 @@ export default function Annonce() {
                       >
                         {property.gesRating}
                       </div>
+                      {(property as any).gesEmissions != null && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {(property as any).gesEmissions} kg eqCO₂/m²/an
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {!property.gesRating && (property as any).gesEmissions != null && (
+                    <div className="flex-1 max-w-[200px]">
+                      <div className="text-sm font-semibold mb-2">Émissions GES</div>
+                      <p className="font-semibold text-lg">
+                        {(property as any).gesEmissions} kg eqCO₂/m²/an
+                      </p>
                     </div>
                   )}
                 </div>

@@ -1609,11 +1609,37 @@ components:
           type: ["string", "null"]
         heating:
           type: ["string", "null"]
+        kitchen:
+          type: ["string", "null"]
+        water:
+          type: ["string", "null"]
+        sanitation:
+          type: ["string", "null"]
+        livingRoomArea:
+          type: ["number", "null"]
+        garageArea:
+          type: ["number", "null"]
+        gardenArea:
+          type: ["number", "null"]
+        terraceArea:
+          type: ["number", "null"]
+        showerRooms:
+          type: ["integer", "null"]
+        levels:
+          type: ["integer", "null"]
+        indoorParking:
+          type: ["integer", "null"]
+        outdoorParking:
+          type: ["integer", "null"]
         # Energy
         dpeRating:
           type: ["string", "null"]
         gesRating:
           type: ["string", "null"]
+        energyConsumption:
+          type: ["number", "null"]
+        gesEmissions:
+          type: ["number", "null"]
         annualEnergyCost:
           type: ["number", "null"]
         # Equipment (booleans)
@@ -1638,6 +1664,8 @@ components:
         hasFiber:
           type: boolean
         hasFireplace:
+          type: boolean
+        hasDisabledAccess:
           type: boolean
         toilets:
           type: ["integer", "null"]
@@ -1796,6 +1824,34 @@ components:
           type: string
         agencyId:
           type: integer
+        livingRoomArea:
+          type: number
+        garageArea:
+          type: number
+        gardenArea:
+          type: number
+        terraceArea:
+          type: number
+        showerRooms:
+          type: integer
+        levels:
+          type: integer
+        kitchen:
+          type: string
+        water:
+          type: string
+        sanitation:
+          type: string
+        indoorParking:
+          type: integer
+        outdoorParking:
+          type: integer
+        energyConsumption:
+          type: number
+        gesEmissions:
+          type: number
+        hasDisabledAccess:
+          type: boolean
 
     PropertyUpdate:
       type: object
@@ -1885,6 +1941,34 @@ components:
           type: string
         metaDescription:
           type: string
+        livingRoomArea:
+          type: number
+        garageArea:
+          type: number
+        gardenArea:
+          type: number
+        terraceArea:
+          type: number
+        showerRooms:
+          type: integer
+        levels:
+          type: integer
+        kitchen:
+          type: string
+        water:
+          type: string
+        sanitation:
+          type: string
+        indoorParking:
+          type: integer
+        outdoorParking:
+          type: integer
+        energyConsumption:
+          type: number
+        gesEmissions:
+          type: number
+        hasDisabledAccess:
+          type: boolean
 
     PropertyStats:
       type: object

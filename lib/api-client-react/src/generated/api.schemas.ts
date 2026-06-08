@@ -233,9 +233,35 @@ export interface Property {
   /** @nullable */
   heating?: string | null;
   /** @nullable */
+  kitchen?: string | null;
+  /** @nullable */
+  water?: string | null;
+  /** @nullable */
+  sanitation?: string | null;
+  /** @nullable */
+  livingRoomArea?: number | null;
+  /** @nullable */
+  garageArea?: number | null;
+  /** @nullable */
+  gardenArea?: number | null;
+  /** @nullable */
+  terraceArea?: number | null;
+  /** @nullable */
+  showerRooms?: number | null;
+  /** @nullable */
+  levels?: number | null;
+  /** @nullable */
+  indoorParking?: number | null;
+  /** @nullable */
+  outdoorParking?: number | null;
+  /** @nullable */
   dpeRating?: string | null;
   /** @nullable */
   gesRating?: string | null;
+  /** @nullable */
+  energyConsumption?: number | null;
+  /** @nullable */
+  gesEmissions?: number | null;
   /** @nullable */
   annualEnergyCost?: number | null;
   hasTerrace?: boolean;
@@ -249,6 +275,7 @@ export interface Property {
   hasAirConditioning?: boolean;
   hasFiber?: boolean;
   hasFireplace?: boolean;
+  hasDisabledAccess?: boolean;
   /** @nullable */
   toilets?: number | null;
   /** @nullable */
@@ -352,6 +379,20 @@ export interface PropertyInput {
   metaTitle?: string;
   metaDescription?: string;
   agencyId?: number;
+  livingRoomArea?: number;
+  garageArea?: number;
+  gardenArea?: number;
+  terraceArea?: number;
+  showerRooms?: number;
+  levels?: number;
+  kitchen?: string;
+  water?: string;
+  sanitation?: string;
+  indoorParking?: number;
+  outdoorParking?: number;
+  energyConsumption?: number;
+  gesEmissions?: number;
+  hasDisabledAccess?: boolean;
 }
 
 export type PropertyUpdateStatus = typeof PropertyUpdateStatus[keyof typeof PropertyUpdateStatus];
@@ -409,6 +450,20 @@ export interface PropertyUpdate {
   fullDescription?: string;
   metaTitle?: string;
   metaDescription?: string;
+  livingRoomArea?: number;
+  garageArea?: number;
+  gardenArea?: number;
+  terraceArea?: number;
+  showerRooms?: number;
+  levels?: number;
+  kitchen?: string;
+  water?: string;
+  sanitation?: string;
+  indoorParking?: number;
+  outdoorParking?: number;
+  energyConsumption?: number;
+  gesEmissions?: number;
+  hasDisabledAccess?: boolean;
 }
 
 export interface StatGroup {

@@ -50,4 +50,18 @@ export interface PropertyUpdate {
   fullDescription?: string;
   metaTitle?: string;
   metaDescription?: string;
+  livingRoomArea?: number;
+  garageArea?: number;
+  gardenArea?: number;
+  terraceArea?: number;
+  showerRooms?: number;
+  levels?: number;
+  kitchen?: string;
+  water?: string;
+  sanitation?: string;
+  indoorParking?: number;
+  outdoorParking?: number;
+  energyConsumption?: number;
+  gesEmissions?: number;
+  hasDisabledAccess?: boolean;
 }
