@@ -1,21 +1,49 @@
-import nodemailer from "nodemailer";
+// Email delivery via the Resend connector (Replit Integrations).
+// The connectors SDK handles the Resend API key / auth automatically.
+import { ReplitConnectors } from "@replit/connectors-sdk";
 import { logger } from "./logger";
 
-const SMTP_HOST = process.env.SMTP_HOST;
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587");
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@ida-immobilier.fr";
+// Sender address. Resend requires this to be a verified domain (or the
+// onboarding@resend.dev sandbox sender, which can only deliver to the
+// Resend account owner's own email). Set EMAIL_FROM to a verified address
+// (e.g. "I.D.A Immobilier <rdv@votre-domaine.fr>") for real client delivery.
+const EMAIL_FROM = process.env.EMAIL_FROM || "I.D.A Immobilier <onboarding@resend.dev>";
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@ida-immobilier.fr";
 
-function createTransport() {
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return null;
-  return nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+const connectors = new ReplitConnectors();
+
+interface SendEmailArgs {
+  to: string;
+  subject: string;
+  html: string;
+  replyTo?: string;
+}
+
+// Sends one email through Resend. Returns true on success, false on any failure
+// (never throws) so callers can treat email as a best-effort side effect.
+async function sendEmail({ to, subject, html, replyTo }: SendEmailArgs): Promise<boolean> {
+  try {
+    const res = await connectors.proxy("resend", "/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [to],
+        subject,
+        html,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      logger.error({ to, subject, status: res.status, detail }, "Resend email rejected");
+      return false;
+    }
+    return true;
+  } catch (err) {
+    logger.error({ err, to, subject }, "Failed to send email via Resend");
+    return false;
+  }
 }
 
 export interface PropertyContactEmailData {
@@ -231,58 +259,29 @@ function appointmentTemplate(data: AppointmentEmailData): string {
 }
 
 export async function sendAppointmentUpdateEmail(data: AppointmentEmailData): Promise<boolean> {
-  const transport = createTransport();
-  if (!transport) {
-    logger.warn("SMTP not configured — appointment email not sent. Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars.");
-    return false;
-  }
-  try {
-    await transport.sendMail({
-      from: `"I.D.A Immobilier" <${EMAIL_FROM}>`,
-      to: data.to,
-      subject: `${APPT_KIND[data.kind].subject} — I.D.A Immobilier`,
-      html: appointmentTemplate(data),
-    });
-    logger.info({ to: data.to, kind: data.kind }, "Appointment update email sent");
-    return true;
-  } catch (err) {
-    logger.error({ err }, "Failed to send appointment update email");
-    return false;
-  }
+  const ok = await sendEmail({
+    to: data.to,
+    subject: `${APPT_KIND[data.kind].subject} — I.D.A Immobilier`,
+    html: appointmentTemplate(data),
+  });
+  if (ok) logger.info({ to: data.to, kind: data.kind }, "Appointment update email sent");
+  return ok;
 }
 
 export async function sendPropertyContactEmails(data: PropertyContactEmailData): Promise<boolean> {
-  const transport = createTransport();
-  if (!transport) {
-    logger.warn("SMTP not configured — email not sent. Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars.");
-    return false;
-  }
-
   const html = htmlTemplate(data);
   const subjectAgent = `Nouveau message — Réf. IDA-${data.propertyId} — ${data.propertyTitle}`;
   const subjectAdmin = `[Copie admin] ${subjectAgent}`;
 
-  try {
-    await transport.sendMail({
-      from: `"I.D.A Immobilier" <${EMAIL_FROM}>`,
-      to: data.agentEmail,
-      replyTo: data.senderEmail,
-      subject: subjectAgent,
-      html,
-    });
+  const [agentOk, adminOk] = await Promise.all([
+    sendEmail({ to: data.agentEmail, replyTo: data.senderEmail, subject: subjectAgent, html }),
+    sendEmail({ to: data.adminEmail, replyTo: data.senderEmail, subject: subjectAdmin, html }),
+  ]);
 
-    await transport.sendMail({
-      from: `"I.D.A Immobilier" <${EMAIL_FROM}>`,
-      to: data.adminEmail,
-      replyTo: data.senderEmail,
-      subject: subjectAdmin,
-      html,
-    });
-
+  if (agentOk && adminOk) {
     logger.info({ propertyId: data.propertyId, agentEmail: data.agentEmail }, "Property contact emails sent");
-    return true;
-  } catch (err) {
-    logger.error({ err }, "Failed to send property contact emails");
-    return false;
+  } else if (agentOk || adminOk) {
+    logger.warn({ propertyId: data.propertyId, agentOk, adminOk }, "Property contact emails partially sent");
   }
+  return agentOk && adminOk;
 }

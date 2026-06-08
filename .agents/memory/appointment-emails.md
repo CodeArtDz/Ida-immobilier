@@ -11,7 +11,8 @@ When staff confirm / reschedule / refuse an appointment via `PATCH /appointments
   - **Why:** the goal is "email the address they used to request it"; a staff payload could carry a different/edited `clientEmail` and misdirect the notification.
 - **Email kind** is derived, not passed: status→confirmed = "confirmed", status→cancelled = "cancelled", else a changed `scheduledAt` (and not cancelled) = "rescheduled".
 - Sending is via `sendAppointmentUpdateEmail` in `artifacts/api-server/src/lib/mailer.ts` (branded navy/gold template).
-- **SMTP must be configured for delivery.** With no `SMTP_HOST/SMTP_USER/SMTP_PASS/EMAIL_FROM` env, the mailer logs a warning and returns false — the PATCH still succeeds. So "appointment updated but no email arrived" usually means SMTP is unset, not a bug.
+- **Delivery goes through the Resend connector** (Replit Integrations), not SMTP. `mailer.ts` uses `@replit/connectors-sdk` → `connectors.proxy("resend", "/emails", ...)`; the SDK injects Resend's API key automatically. nodemailer/SMTP env vars are gone.
+- **Resend test-mode caveat:** until a domain is verified at resend.com/domains, Resend rejects (403 `validation_error`) any recipient that isn't the account owner's own email, and the mailer logs "Resend email rejected" + returns false. The PATCH still succeeds. So "appointment updated but client got no email" usually means the sending domain isn't verified yet (set `EMAIL_FROM` to an address on the verified domain), not a code bug.
 - PATCH and DELETE on appointments are staff-only (`requireRole`); POST stays `requireAuth` (clients book from annonce.tsx); GET stays `requireAuth`.
 
 ## Known pre-existing gap (not yet fixed)
