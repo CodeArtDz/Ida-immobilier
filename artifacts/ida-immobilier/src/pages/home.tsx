@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useListFeaturedProperties } from "@workspace/api-client-react";
 import { PropertyCard } from "@/components/property-card";
 import heroBg from "@/assets/images/hero-bg.png";
+import estimationVilla from "@/assets/images/estimation-villa.png";
 import heroVideo from "@assets/18682412-uhd_3840_2160_25fps_1780936165688.mp4";
 import { useSeo } from "@/hooks/use-seo";
 import { useJsonLd } from "@/hooks/use-json-ld";
@@ -173,13 +174,13 @@ export default function Home() {
             </Button>
           </div>
           <div className="hidden md:block">
-            {/* Abstract decorative element for the CTA */}
-            <div className="w-full aspect-square rounded-full border-4 border-accent/20 flex items-center justify-center p-8">
-              <div className="w-full h-full rounded-full border-4 border-accent/40 flex items-center justify-center p-8">
-                 <div className="w-full h-full rounded-full bg-accent/10 flex items-center justify-center">
-                   <span className="font-serif text-6xl text-accent font-bold">I.D.A</span>
-                 </div>
-              </div>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-accent/30">
+              <img
+                src={estimationVilla}
+                alt="Villa de prestige en Provence"
+                className="w-full aspect-[4/3] object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
             </div>
           </div>
         </div>

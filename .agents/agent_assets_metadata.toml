@@ -24,3 +24,9 @@ id = "4lybKT5F3UWHqpZy9ZCJe"
 uri = "file://artifacts/ida-immobilier/src/assets/images/property-3.png"
 type = "image"
 title = "Provence stone house"
+
+[[generated]]
+id = "1zjf5u3M2_b673pdNSFII"
+uri = "file://artifacts/ida-immobilier/src/assets/images/estimation-villa.png"
+type = "image"
+title = "luxury provence villa estimation"
