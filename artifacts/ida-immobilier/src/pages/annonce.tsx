@@ -85,7 +85,7 @@ function PropertyGallery({
   });
 
   const photos =
-    media?.filter((m) => m.type === "photo").map((m) => m.url) ?? [];
+    media?.filter((m) => m.type === "photo").map((m) => m.watermarkedUrl || m.url) ?? [];
   const images =
     photos.length > 0 ? photos : [mainImageUrl || property1 as string];
   const total = images.length;

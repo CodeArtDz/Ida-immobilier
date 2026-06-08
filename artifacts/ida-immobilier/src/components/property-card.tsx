@@ -26,7 +26,8 @@ function CardSlider({ propertyId, mainImageUrl, title }: {
     },
   });
 
-  const photos = media?.filter((m) => m.type === "photo").map((m) => m.url) ?? [];
+  const photos =
+    media?.filter((m) => m.type === "photo").map((m) => m.watermarkedUrl || m.url) ?? [];
   const images = photos.length > 0 ? photos : [mainImageUrl || property1];
   const total = images.length;
 

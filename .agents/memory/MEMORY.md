@@ -1,6 +1,6 @@
 - [Auth token wiring](auth-token-wiring.md) — setAuthTokenGetter must be called in main.tsx for token-based auth; without it all API calls return 401
 - [Sharp build approval](sharp-build-approval.md) — add `sharp` to onlyBuiltDependencies in pnpm-workspace.yaml before installing it
-- [Media upload architecture](media-upload.md) — multer + sharp upload endpoint, uploads served at /api/uploads/, watermarked files at uploads/watermarked/
 - [SEO score scans production](seo-spa-deployment.md) — Replit "Santé SEO" scores the published deployment, not dev; low score after dev SEO work = needs republish
 - [Testing auth-gated routes](testing-auth-routes.md) — live dev DB diverges from seed creds in replit.md; create a disposable scrypt admin (salt:hexkey) to e2e-test, then clean up
 - [French legal pages](legal-pages.md) — never fabricate FR agency legal identifiers (SIRET, RCS, carte pro, host phone…); leave them as TODO placeholders for the owner
+- [Property media watermarking](media-watermark.md) — upload auto-watermarks (sharp); ALL public photo displays must render `watermarkedUrl || url` or they leak unwatermarked originals
