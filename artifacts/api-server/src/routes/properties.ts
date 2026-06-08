@@ -12,6 +12,33 @@ import {
 import { eq, and, desc, sql, ilike, gte, lte, count } from "drizzle-orm";
 import { requireAuth, optionalAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
+import multer from "multer";
+import path from "path";
+import { promises as fs } from "fs";
+import { applyWatermark } from "../lib/watermark";
+
+const UPLOADS_DIR = "/home/runner/workspace/artifacts/api-server/uploads";
+
+const storage = multer.diskStorage({
+  destination: async (_req, _file, cb) => {
+    const dir = path.join(UPLOADS_DIR, "original");
+    await fs.mkdir(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime"];
+    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Type de fichier non autorisé"));
+  },
+});
 
 const router = Router();
 
@@ -336,6 +363,55 @@ router.post("/properties/:id/media", requireAuth, async (req, res) => {
   } catch (err) {
     logger.error({ err }, "Add media error");
     res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// POST /properties/:id/media/upload  (multipart/form-data)
+router.post("/properties/:id/media/upload", requireAuth, upload.single("file"), async (req, res) => {
+  try {
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) {
+      res.status(400).json({ error: "Aucun fichier fourni" });
+      return;
+    }
+
+    const propertyId = parseInt(req.params.id as string);
+    const isImage = file.mimetype.startsWith("image/");
+    const originalUrl = `/api/uploads/original/${file.filename}`;
+    let watermarkedUrl: string | null = null;
+
+    if (isImage) {
+      const wmFilename = `wm-${file.filename.replace(/\.[^.]+$/, "")}.jpg`;
+      const wmPath = path.join(UPLOADS_DIR, "watermarked", wmFilename);
+      try {
+        await applyWatermark(file.path, wmPath);
+        watermarkedUrl = `/api/uploads/watermarked/${wmFilename}`;
+      } catch (wmErr) {
+        logger.warn({ wmErr }, "Watermark failed, using original");
+        watermarkedUrl = originalUrl;
+      }
+    }
+
+    const existing = await db
+      .select({ order: propertyMediaTable.order })
+      .from(propertyMediaTable)
+      .where(eq(propertyMediaTable.propertyId, propertyId))
+      .orderBy(desc(propertyMediaTable.order))
+      .limit(1);
+    const nextOrder = (existing[0]?.order ?? -1) + 1;
+
+    const [media] = await db.insert(propertyMediaTable).values({
+      propertyId,
+      url: originalUrl,
+      watermarkedUrl,
+      type: isImage ? "photo" : "video",
+      order: nextOrder,
+    }).returning();
+
+    res.status(201).json(media);
+  } catch (err) {
+    logger.error({ err }, "Upload media error");
+    res.status(500).json({ error: "Erreur lors de l'upload" });
   }
 });
 

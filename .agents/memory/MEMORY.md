@@ -1,3 +1,3 @@
-- [IDA Immobilier DB gotchas](ida-db-gotchas.md) — numeric fields return strings from pg; always parseFloat() in routes. After schema changes, run typecheck:libs before api-server typecheck.
-- [IDA Immobilier Express 5 params](ida-express5-params.md) — req.params values need `as string` cast before parseInt() due to Express 5 TS types seeing string | string[].
-- [IDA Immobilier auth](ida-auth.md) — token-based auth with crypto.scrypt; tokens in-memory Map; replace with Redis for multi-instance prod.
+- [Auth token wiring](auth-token-wiring.md) — setAuthTokenGetter must be called in main.tsx for token-based auth; without it all API calls return 401
+- [Sharp build approval](sharp-build-approval.md) — add `sharp` to onlyBuiltDependencies in pnpm-workspace.yaml before installing it
+- [Media upload architecture](media-upload.md) — multer + sharp upload endpoint, uploads served at /api/uploads/, watermarked files at uploads/watermarked/
