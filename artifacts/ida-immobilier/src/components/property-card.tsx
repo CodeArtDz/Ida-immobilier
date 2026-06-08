@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useLocation } from "wouter";
+import { Link } from "wouter";
 import { MapPin, Bed, Maximize, ChevronLeft, ChevronRight, Images, Trees, Home, Building2 } from "lucide-react";
 import type { Property } from "@workspace/api-client-react";
 import { useListPropertyMedia, getListPropertyMediaQueryKey } from "@workspace/api-client-react";
@@ -102,7 +102,6 @@ function CardSlider({ propertyId, mainImageUrl, title }: {
 }
 
 export function PropertyCard({ property }: { property: Property }) {
-  const [, navigate] = useLocation();
   const price = property.salePrice || property.rentalPrice;
   const formattedPrice = price
     ? new Intl.NumberFormat("fr-FR", {
@@ -114,7 +113,6 @@ export function PropertyCard({ property }: { property: Property }) {
 
   const p = property as any;
 
-  // Feature pills: show max 4 active features
   const featurePills = [
     p.hasTerrace && "Terrasse",
     p.hasPool && "Piscine",
@@ -132,9 +130,9 @@ export function PropertyCard({ property }: { property: Property }) {
       transition={{ duration: 0.3 }}
       className="group bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md"
     >
-      <div
-        className="relative aspect-[4/3] overflow-hidden cursor-pointer"
-        onClick={() => navigate(`/annonce/${property.id}`)}
+      <Link
+        href={`/annonce/${property.id}`}
+        className="relative aspect-[4/3] overflow-hidden block"
       >
         <CardSlider
           propertyId={property.id}
@@ -151,16 +149,16 @@ export function PropertyCard({ property }: { property: Property }) {
             {property.dpeRating}
           </div>
         )}
-      </div>
+      </Link>
 
       <div className="p-5">
         <div className="flex justify-between items-start mb-1.5">
-          <span
-            className="font-serif text-lg font-semibold text-foreground line-clamp-1 hover:text-accent cursor-pointer"
-            onClick={() => navigate(`/annonce/${property.id}`)}
+          <Link
+            href={`/annonce/${property.id}`}
+            className="font-serif text-lg font-semibold text-foreground line-clamp-1 hover:text-accent"
           >
             {property.title}
-          </span>
+          </Link>
           <span className="font-serif text-lg font-bold text-primary ml-3 shrink-0">
             {formattedPrice}
             {property.rentalPrice && <span className="text-xs font-normal text-muted-foreground">/mois</span>}

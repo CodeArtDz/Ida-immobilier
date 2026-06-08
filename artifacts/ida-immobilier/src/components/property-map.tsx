@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
 import type { Property } from "@workspace/api-client-react";
 
 // Leaflet is loaded dynamically to avoid SSR issues with Vite
@@ -21,7 +20,6 @@ export function PropertyMap({ properties }: PropertyMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<Map<number, LeafletMarker>>(new Map());
   const [selected, setSelected] = useState<Property | null>(null);
-  const [, navigate] = useLocation();
 
   // Properties with valid coordinates
   const mappable = properties.filter(
@@ -158,9 +156,9 @@ export function PropertyMap({ properties }: PropertyMapProps) {
       {selected && (
         <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-card border border-border rounded-xl shadow-2xl p-4 flex gap-4 items-center max-w-lg mx-auto">
           {/* Thumbnail */}
-          <div
-            className="w-24 h-20 rounded-lg overflow-hidden shrink-0 cursor-pointer"
-            onClick={() => navigate(`/annonce/${selected.id}`)}
+          <a
+            href={`/annonce/${selected.id}`}
+            className="w-24 h-20 rounded-lg overflow-hidden shrink-0 block"
           >
             <img
               src={selected.mainImageUrl || ""}
@@ -170,16 +168,16 @@ export function PropertyMap({ properties }: PropertyMapProps) {
                 (e.target as HTMLImageElement).style.background = "#e5e7eb";
               }}
             />
-          </div>
+          </a>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <p
-              className="font-serif text-sm font-bold text-primary line-clamp-2 cursor-pointer hover:underline"
-              onClick={() => navigate(`/annonce/${selected.id}`)}
+            <a
+              href={`/annonce/${selected.id}`}
+              className="font-serif text-sm font-bold text-primary line-clamp-2 hover:underline block"
             >
               {selected.title}
-            </p>
+            </a>
             <p className="text-xs text-muted-foreground mt-0.5">
               {selected.city}, {selected.postalCode}
             </p>
@@ -199,12 +197,12 @@ export function PropertyMap({ properties }: PropertyMapProps) {
 
           {/* Actions */}
           <div className="flex flex-col gap-2 shrink-0">
-            <button
-              onClick={() => navigate(`/annonce/${selected.id}`)}
-              className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors"
+            <a
+              href={`/annonce/${selected.id}`}
+              className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors text-center"
             >
               Voir le bien
-            </button>
+            </a>
             <button
               onClick={() => setSelected(null)}
               className="text-muted-foreground text-xs hover:text-foreground transition-colors text-center"

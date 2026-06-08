@@ -14,9 +14,11 @@ import estimationsRouter from "./estimations";
 import analyticsRouter from "./analytics";
 import contactRouter from "./contact";
 import storageRouter from "./storage";
+import sitemapRouter from "./sitemap";
 
 const router: IRouter = Router();
 
+router.use(sitemapRouter);
 router.use(healthRouter);
 router.use(storageRouter);
 router.use(authRouter);
