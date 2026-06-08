@@ -1,3 +1,4 @@
 - [Auth token wiring](auth-token-wiring.md) — setAuthTokenGetter must be called in main.tsx for token-based auth; without it all API calls return 401
 - [Sharp build approval](sharp-build-approval.md) — add `sharp` to onlyBuiltDependencies in pnpm-workspace.yaml before installing it
 - [Media upload architecture](media-upload.md) — multer + sharp upload endpoint, uploads served at /api/uploads/, watermarked files at uploads/watermarked/
+- [SEO score scans production](seo-spa-deployment.md) — Replit "Santé SEO" scores the published deployment, not dev; low score after dev SEO work = needs republish
