@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { conversationsTable, conversationParticipantsTable, messagesTable, usersTable, propertiesTable, activityLogsTable } from "@workspace/db";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 
@@ -94,6 +94,25 @@ router.post("/conversations/:id/messages", requireAuth, async (req, res) => {
     res.status(201).json({ ...msg, senderName: `${user.firstName} ${user.lastName}`, senderAvatarUrl: user.avatarUrl ?? null });
   } catch (err) {
     logger.error({ err }, "Send message error");
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// PATCH /conversations/:id/read
+router.patch("/conversations/:id/read", requireAuth, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const convId = parseInt(req.params.id as string);
+    await db.update(conversationParticipantsTable)
+      .set({ unreadCount: 0 })
+      .where(and(eq(conversationParticipantsTable.conversationId, convId), eq(conversationParticipantsTable.userId, user.id)));
+    const msgIds = (await db.select({ id: messagesTable.id }).from(messagesTable).where(eq(messagesTable.conversationId, convId))).map(m => m.id);
+    if (msgIds.length > 0) {
+      await db.update(messagesTable).set({ isRead: true }).where(inArray(messagesTable.id, msgIds));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error({ err }, "Mark read error");
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

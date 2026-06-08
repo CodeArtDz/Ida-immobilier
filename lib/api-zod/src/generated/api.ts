@@ -1432,6 +1432,18 @@ export const SendMessageBody = zod.object({
 
 
 /**
+ * @summary Mark a conversation as read for the current user
+ */
+export const MarkConversationReadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const MarkConversationReadResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary List estimation requests
  */
 export const ListEstimationsResponseItem = zod.object({

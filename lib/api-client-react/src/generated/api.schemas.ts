@@ -1016,3 +1016,7 @@ export type ListNotificationsParams = {
 unread?: boolean;
 };
 
+export type MarkConversationRead200 = {
+  ok: boolean;
+};
+

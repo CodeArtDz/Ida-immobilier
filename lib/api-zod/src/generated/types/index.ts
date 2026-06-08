@@ -57,6 +57,7 @@ export * from './listPropertiesStatus';
 export * from './listUsersParams';
 export * from './listUsersRole';
 export * from './loginInput';
+export * from './markConversationRead200';
 export * from './message';
 export * from './messageInput';
 export * from './notification';
