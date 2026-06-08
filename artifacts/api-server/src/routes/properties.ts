@@ -47,7 +47,8 @@ router.get("/properties", optionalAuth, async (req, res) => {
   try {
     const {
       status, type, city, minPrice, maxPrice, minArea, maxArea,
-      rooms, bedrooms, agencyId, agentId, page = "1", limit = "12", search
+      rooms, bedrooms, agencyId, agentId, page = "1", limit = "12", search,
+      dpeRating, hasTerrace, hasPool, hasGarden, hasParking, hasBalcony, hasGarage, minBathrooms
     } = req.query as Record<string, string>;
 
     const user = (req as any).user;
@@ -76,6 +77,14 @@ router.get("/properties", optionalAuth, async (req, res) => {
     if (minPrice) conditions.push(gte(propertiesTable.salePrice, minPrice));
     if (maxPrice) conditions.push(lte(propertiesTable.salePrice, maxPrice));
     if (search) conditions.push(ilike(propertiesTable.title, `%${search}%`));
+    if (dpeRating) conditions.push(eq(propertiesTable.dpeRating, dpeRating));
+    if (hasTerrace === "true") conditions.push(eq(propertiesTable.hasTerrace, true));
+    if (hasPool === "true") conditions.push(eq(propertiesTable.hasPool, true));
+    if (hasGarden === "true") conditions.push(eq(propertiesTable.hasGarden, true));
+    if (hasParking === "true") conditions.push(eq(propertiesTable.hasParking, true));
+    if (hasBalcony === "true") conditions.push(eq(propertiesTable.hasBalcony, true));
+    if (hasGarage === "true") conditions.push(eq(propertiesTable.hasGarage, true));
+    if (minBathrooms) conditions.push(gte(propertiesTable.bathrooms, parseInt(minBathrooms)));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 

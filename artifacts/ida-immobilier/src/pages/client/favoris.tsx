@@ -14,9 +14,9 @@ export default function Favoris() {
         </div>
       ) : favorites && favorites.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favorites.map(fav => (
-            simProp => fav.property ? <PropertyCard key={fav.id} property={fav.property} /> : null
-          ))}
+          {favorites.map(fav =>
+            fav.property ? <PropertyCard key={fav.id} property={fav.property as any} /> : null
+          )}
         </div>
       ) : (
         <div className="bg-card border border-border p-12 text-center rounded-xl">

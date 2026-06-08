@@ -17,4 +17,6 @@ export const PropertyInputType = {
   commercial: 'commercial',
   garage: 'garage',
   other: 'other',
+  building: 'building',
+  programme: 'programme',
 } as const;

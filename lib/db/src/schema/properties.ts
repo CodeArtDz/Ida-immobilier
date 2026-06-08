@@ -2,7 +2,7 @@ import { pgTable, serial, text, boolean, integer, numeric, real, timestamp, pgEn
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const propertyTypeEnum = pgEnum("property_type", ["apartment", "house", "villa", "land", "commercial", "garage", "other"]);
+export const propertyTypeEnum = pgEnum("property_type", ["apartment", "house", "villa", "land", "commercial", "garage", "other", "building", "programme"]);
 export const propertyStatusEnum = pgEnum("property_status", ["draft", "published", "reserved", "sold", "rented", "archived"]);
 
 export const propertiesTable = pgTable("properties", {
@@ -53,6 +53,10 @@ export const propertiesTable = pgTable("properties", {
   hasElevator: boolean("has_elevator").notNull().default(false),
   hasAirConditioning: boolean("has_air_conditioning").notNull().default(false),
   hasFiber: boolean("has_fiber").notNull().default(false),
+  hasFireplace: boolean("has_fireplace").notNull().default(false),
+  // Extra characteristics
+  toilets: integer("toilets"),
+  residenceName: text("residence_name"),
   // Descriptions
   shortDescription: text("short_description"),
   fullDescription: text("full_description"),

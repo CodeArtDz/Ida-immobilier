@@ -75,6 +75,11 @@ export interface Property {
   hasElevator?: boolean;
   hasAirConditioning?: boolean;
   hasFiber?: boolean;
+  hasFireplace?: boolean;
+  /** @nullable */
+  toilets?: number | null;
+  /** @nullable */
+  residenceName?: string | null;
   /** @nullable */
   shortDescription?: string | null;
   /** @nullable */

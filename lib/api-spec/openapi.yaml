@@ -166,6 +166,38 @@ paths:
           name: search
           schema:
             type: string
+        - in: query
+          name: dpeRating
+          schema:
+            type: string
+        - in: query
+          name: hasTerrace
+          schema:
+            type: boolean
+        - in: query
+          name: hasPool
+          schema:
+            type: boolean
+        - in: query
+          name: hasGarden
+          schema:
+            type: boolean
+        - in: query
+          name: hasParking
+          schema:
+            type: boolean
+        - in: query
+          name: hasBalcony
+          schema:
+            type: boolean
+        - in: query
+          name: hasGarage
+          schema:
+            type: boolean
+        - in: query
+          name: minBathrooms
+          schema:
+            type: integer
       responses:
         "200":
           description: List of properties
@@ -1424,7 +1456,7 @@ components:
           type: ["string", "null"]
         type:
           type: string
-          enum: [apartment, house, villa, land, commercial, garage, other]
+          enum: [apartment, house, villa, land, commercial, garage, other, building, programme]
         status:
           type: string
           enum: [draft, published, reserved, sold, rented, archived]
@@ -1507,6 +1539,12 @@ components:
           type: boolean
         hasFiber:
           type: boolean
+        hasFireplace:
+          type: boolean
+        toilets:
+          type: ["integer", "null"]
+        residenceName:
+          type: ["string", "null"]
         # Descriptions
         shortDescription:
           type: ["string", "null"]
@@ -1573,7 +1611,7 @@ components:
           type: string
         type:
           type: string
-          enum: [apartment, house, villa, land, commercial, garage, other]
+          enum: [apartment, house, villa, land, commercial, garage, other, building, programme]
         address:
           type: string
         postalCode:
@@ -1644,6 +1682,12 @@ components:
           type: boolean
         hasFiber:
           type: boolean
+        hasFireplace:
+          type: boolean
+        toilets:
+          type: integer
+        residenceName:
+          type: string
         shortDescription:
           type: string
         fullDescription:
@@ -1729,6 +1773,12 @@ components:
           type: boolean
         hasFiber:
           type: boolean
+        hasFireplace:
+          type: boolean
+        toilets:
+          type: integer
+        residenceName:
+          type: string
         shortDescription:
           type: string
         fullDescription:

@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useGetMe } from "@workspace/api-client-react";
-import type { GetMeResponse } from "@workspace/api-client-react";
-
-type User = GetMeResponse;
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import type { User } from "@workspace/api-client-react";
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const { data: fetchedUser, isLoading } = useGetMe({
     query: {
+      queryKey: getGetMeQueryKey(),
       enabled: !!token && !cachedUser,
       retry: false,
     }

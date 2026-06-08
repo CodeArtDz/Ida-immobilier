@@ -165,6 +165,8 @@ export const PropertyType = {
   commercial: 'commercial',
   garage: 'garage',
   other: 'other',
+  building: 'building',
+  programme: 'programme',
 } as const;
 
 export type PropertyStatus = typeof PropertyStatus[keyof typeof PropertyStatus];
@@ -246,6 +248,11 @@ export interface Property {
   hasElevator?: boolean;
   hasAirConditioning?: boolean;
   hasFiber?: boolean;
+  hasFireplace?: boolean;
+  /** @nullable */
+  toilets?: number | null;
+  /** @nullable */
+  residenceName?: string | null;
   /** @nullable */
   shortDescription?: string | null;
   /** @nullable */
@@ -295,6 +302,8 @@ export const PropertyInputType = {
   commercial: 'commercial',
   garage: 'garage',
   other: 'other',
+  building: 'building',
+  programme: 'programme',
 } as const;
 
 export interface PropertyInput {
@@ -335,6 +344,9 @@ export interface PropertyInput {
   hasElevator?: boolean;
   hasAirConditioning?: boolean;
   hasFiber?: boolean;
+  hasFireplace?: boolean;
+  toilets?: number;
+  residenceName?: string;
   shortDescription?: string;
   fullDescription?: string;
   metaTitle?: string;
@@ -390,6 +402,9 @@ export interface PropertyUpdate {
   hasElevator?: boolean;
   hasAirConditioning?: boolean;
   hasFiber?: boolean;
+  hasFireplace?: boolean;
+  toilets?: number;
+  residenceName?: string;
   shortDescription?: string;
   fullDescription?: string;
   metaTitle?: string;
@@ -957,6 +972,14 @@ agentId?: number;
 page?: number;
 limit?: number;
 search?: string;
+dpeRating?: string;
+hasTerrace?: boolean;
+hasPool?: boolean;
+hasGarden?: boolean;
+hasParking?: boolean;
+hasBalcony?: boolean;
+hasGarage?: boolean;
+minBathrooms?: number;
 };
 
 export type ListPropertiesStatus = typeof ListPropertiesStatus[keyof typeof ListPropertiesStatus];

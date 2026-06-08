@@ -27,6 +27,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Images,
+  Trees,
+  Building2,
+  Home,
+  Layers,
+  Sun,
+  Waves,
+  Car,
+  Archive,
+  Wind,
+  Wifi,
+  Flame,
+  ArrowUpDown,
 } from "lucide-react";
 import property1 from "@/assets/images/property-1.png";
 import { useToast } from "@/hooks/use-toast";
@@ -466,6 +478,8 @@ export default function Annonce() {
     land: "Terrain",
     commercial: "Local commercial",
     garage: "Garage",
+    building: "Immeuble",
+    programme: "Programme neuf",
     other: "Autre",
   };
 
@@ -529,10 +543,10 @@ export default function Annonce() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-12">
-            <div className="flex flex-wrap gap-8 py-6 border-y border-border">
+            <div className="flex flex-wrap gap-6 py-6 border-y border-border">
               {property.livingArea && (
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
                     <Maximize className="w-6 h-6" />
                   </div>
                   <div>
@@ -541,9 +555,42 @@ export default function Annonce() {
                   </div>
                 </div>
               )}
+              {(property as any).carrezArea && (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Surface Carrez</p>
+                    <p className="font-semibold text-lg">{(property as any).carrezArea} m²</p>
+                  </div>
+                </div>
+              )}
+              {(property as any).landArea && (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                    <Trees className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Terrain</p>
+                    <p className="font-semibold text-lg">{(property as any).landArea} m²</p>
+                  </div>
+                </div>
+              )}
+              {property.rooms !== null && property.rooms !== undefined && (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                    <Home className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pièces</p>
+                    <p className="font-semibold text-lg">{property.rooms}</p>
+                  </div>
+                </div>
+              )}
               {property.bedrooms !== null && property.bedrooms !== undefined && (
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
                     <Bed className="w-6 h-6" />
                   </div>
                   <div>
@@ -552,14 +599,39 @@ export default function Annonce() {
                   </div>
                 </div>
               )}
-              {property.rooms !== null && property.rooms !== undefined && (
+              {(property as any).bathrooms != null && (
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
                     <Bath className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Pièces</p>
-                    <p className="font-semibold text-lg">{property.rooms}</p>
+                    <p className="text-sm text-muted-foreground">Salles de bains</p>
+                    <p className="font-semibold text-lg">{(property as any).bathrooms}</p>
+                  </div>
+                </div>
+              )}
+              {(property as any).floor != null && (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Étage</p>
+                    <p className="font-semibold text-lg">
+                      {(property as any).floor}
+                      {(property as any).totalFloors ? `/${(property as any).totalFloors}` : ""}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {(property as any).yearBuilt && (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Construction</p>
+                    <p className="font-semibold text-lg">{(property as any).yearBuilt}</p>
                   </div>
                 </div>
               )}
@@ -578,58 +650,39 @@ export default function Annonce() {
 
             <div>
               <h2 className="font-serif text-2xl font-bold text-primary mb-6">Prestations</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {property.hasTerrace && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Terrasse
+              {(() => {
+                const features = [
+                  { key: "hasTerrace", label: "Terrasse", Icon: Sun },
+                  { key: "hasBalcony", label: "Balcon", Icon: Building2 },
+                  { key: "hasGarden", label: "Jardin", Icon: Trees },
+                  { key: "hasPool", label: "Piscine", Icon: Waves },
+                  { key: "hasGarage", label: "Garage", Icon: Car },
+                  { key: "hasParking", label: "Parking", Icon: Car },
+                  { key: "hasCellar", label: "Cave", Icon: Archive },
+                  { key: "hasElevator", label: "Ascenseur", Icon: ArrowUpDown },
+                  { key: "hasAirConditioning", label: "Climatisation", Icon: Wind },
+                  { key: "hasFiber", label: "Fibre optique", Icon: Wifi },
+                  { key: "hasFireplace", label: "Cheminée", Icon: Flame },
+                ].filter(({ key }) => !!(property as any)[key]);
+
+                return features.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {features.map(({ label, Icon }) => (
+                      <div
+                        key={label}
+                        className="flex items-center gap-3 p-3.5 rounded-xl bg-accent/5 border border-accent/20"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-medium">{label}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
-                {property.hasBalcony && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Balcon
-                  </div>
-                )}
-                {property.hasGarden && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Jardin
-                  </div>
-                )}
-                {property.hasPool && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Piscine
-                  </div>
-                )}
-                {property.hasGarage && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Garage
-                  </div>
-                )}
-                {property.hasParking && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Parking
-                  </div>
-                )}
-                {property.hasCellar && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Cave
-                  </div>
-                )}
-                {property.hasElevator && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Ascenseur
-                  </div>
-                )}
-                {property.hasAirConditioning && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Climatisation
-                  </div>
-                )}
-                {property.hasFiber && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent" /> Fibre optique
-                  </div>
-                )}
-              </div>
+                ) : (
+                  <p className="text-muted-foreground">Aucune prestation renseignée.</p>
+                );
+              })()}
             </div>
 
             {(property.dpeRating || property.gesRating) && (

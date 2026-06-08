@@ -43,6 +43,9 @@ export interface PropertyUpdate {
   hasElevator?: boolean;
   hasAirConditioning?: boolean;
   hasFiber?: boolean;
+  hasFireplace?: boolean;
+  toilets?: number;
+  residenceName?: string;
   shortDescription?: string;
   fullDescription?: string;
   metaTitle?: string;
