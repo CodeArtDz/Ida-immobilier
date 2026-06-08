@@ -1,0 +1,24 @@
+# I.D.A Immobilier
+
+> Agence immobilière de prestige basée à Marignane, en Provence (Bouches-du-Rhône). Spécialisée dans la vente, la location et l'estimation de biens résidentiels et de prestige en Provence-Alpes-Côte d'Azur (PACA).
+
+I.D.A Immobilier accompagne particuliers et investisseurs dans leurs projets immobiliers sur la région PACA : achat, vente, location, programmes neufs et estimation en ligne. L'agence propose un service personnalisé avec des agents locaux expérimentés couvrant Marignane, Marseille, Aix-en-Provence et l'ensemble du bassin provençal.
+
+## Site canonique
+
+https://ida-immobilier.com/
+
+## Sections principales
+
+- [Accueil](https://ida-immobilier.com/) — Présentation de l'agence, biens en vedette, services clés
+- [Acheter](https://ida-immobilier.com/acheter) — Recherche de biens à l'achat avec filtres (ville, type, budget, surface)
+- [Louer](https://ida-immobilier.com/louer) — Recherche de biens à la location avec filtres
+- [Programmes neufs](https://ida-immobilier.com/programmes-neufs) — Logements neufs et promotions immobilières en PACA
+- [Estimation](https://ida-immobilier.com/estimation) — Outil d'estimation en ligne gratuit (adresse → caractéristiques → contact)
+- [Nos agences](https://ida-immobilier.com/nos-agences) — Coordonnées et emplacements des agences
+- [À propos](https://ida-immobilier.com/a-propos) — Histoire, valeurs et équipe de l'agence
+- [Contact](https://ida-immobilier.com/contact) — Formulaire de contact et informations pratiques
+
+## Ressources techniques
+
+- [Plan du site (XML)](https://ida-immobilier.com/sitemap.xml)
