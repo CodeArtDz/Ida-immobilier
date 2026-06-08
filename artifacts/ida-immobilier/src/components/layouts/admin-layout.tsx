@@ -29,7 +29,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   if (user?.role === 'superadmin' || user?.role === 'admin') {
     navigation.push(
       { name: 'Agences', href: '/tableau-de-bord/agences', icon: Building2 },
-      { name: 'Utilisateurs', href: '/tableau-de-bord/utilisateurs', icon: UserCog }
+      { name: 'Personnel', href: '/tableau-de-bord/utilisateurs', icon: UserCog }
     );
   }
 
