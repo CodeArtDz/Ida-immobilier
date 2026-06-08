@@ -4,15 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckCircle2, Loader2, User, Lock, Camera, Trash2 } from "lucide-react";
+import { CheckCircle2, Loader2, User, Lock, Camera, Trash2, Shield } from "lucide-react";
 import { useUpload } from "@workspace/object-storage-web";
+
+const ROLE_LABELS: Record<string, string> = {
+  superadmin: "Super Administrateur",
+  admin: "Administrateur",
+  agency_manager: "Directeur d'agence",
+  agent: "Agent",
+  client: "Client",
+};
 
 function getAvatarSrc(avatarUrl: string | null | undefined): string | null {
   if (!avatarUrl) return null;
   return "/api/storage" + avatarUrl;
 }
 
-export default function ClientProfil() {
+export default function AdminProfil() {
   const { user, refreshUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,8 +166,22 @@ export default function ClientProfil() {
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`.toUpperCase();
 
   return (
-    <div className="space-y-8 max-w-2xl">
-      <h1 className="font-serif text-3xl font-bold text-primary">Mon Profil</h1>
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h1 className="font-serif text-3xl font-bold text-foreground">Mon Profil</h1>
+        <p className="text-muted-foreground mt-1">Gérez vos informations personnelles et vos préférences de sécurité.</p>
+      </div>
+
+      {/* Role badge */}
+      <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-4 py-3">
+        <Shield className="w-4 h-4 text-primary" />
+        <span className="text-sm font-medium text-primary">
+          Rôle : {ROLE_LABELS[user?.role ?? ""] ?? user?.role}
+        </span>
+        {(user as any)?.agencyName && (
+          <span className="text-sm text-muted-foreground ml-2">— {(user as any).agencyName}</span>
+        )}
+      </div>
 
       {/* Avatar */}
       <Card>
@@ -168,7 +190,7 @@ export default function ClientProfil() {
             <Camera className="w-5 h-5 text-accent" />
             <CardTitle className="text-lg font-semibold">Photo de profil</CardTitle>
           </div>
-          <CardDescription>Ajoutez une photo pour personnaliser votre espace.</CardDescription>
+          <CardDescription>Visible dans le tableau de bord et vos communications clients.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
@@ -191,19 +213,8 @@ export default function ClientProfil() {
               )}
             </div>
             <div className="space-y-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-              >
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                 <Camera className="w-4 h-4 mr-2" />
                 {avatarSrc ? "Changer la photo" : "Ajouter une photo"}
               </Button>
@@ -233,7 +244,6 @@ export default function ClientProfil() {
             <User className="w-5 h-5 text-accent" />
             <CardTitle className="text-lg font-semibold">Informations personnelles</CardTitle>
           </div>
-          <CardDescription>Ces informations sont visibles par les agents I.D.A Immobilier.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

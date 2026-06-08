@@ -13,10 +13,12 @@ import conversationsRouter from "./conversations";
 import estimationsRouter from "./estimations";
 import analyticsRouter from "./analytics";
 import contactRouter from "./contact";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(storageRouter);
 router.use(authRouter);
 router.use(propertiesRouter);
 router.use(agenciesRouter);

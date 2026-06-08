@@ -985,6 +985,97 @@ export const DeactivateUserResponse = zod.object({
 
 
 /**
+ * @summary Get current user profile
+ */
+export const GetMyProfileResponse = zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.enum(['superadmin', 'admin', 'agency_manager', 'agent', 'client']),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "agencyId": zod.number().nullish(),
+  "agencyName": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update current user profile
+ */
+export const UpdateMyProfileBody = zod.object({
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "avatarUrl": zod.string().optional(),
+  "agencyId": zod.number().nullish(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateMyProfileResponse = zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.enum(['superadmin', 'admin', 'agency_manager', 'agent', 'client']),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "agencyId": zod.number().nullish(),
+  "agencyName": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().min(1),
+  "contentType": zod.string().min(1)
+})
+
+
+
+
+
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string(),
+  "metadata": zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().min(1),
+  "contentType": zod.string().min(1)
+}).optional()
+})
+
+
+/**
+ * @summary Serve a public asset
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+
+/**
+ * @summary Serve an uploaded object
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+
+/**
  * @summary List leads
  */
 export const ListLeadsQueryParams = zod.object({

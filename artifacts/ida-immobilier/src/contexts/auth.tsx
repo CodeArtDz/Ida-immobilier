@@ -7,6 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  refreshUser: (updated: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,8 +38,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCachedUser(null);
   };
 
+  const refreshUser = (updated: User) => {
+    setCachedUser(updated);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading: !!token && isLoading && !cachedUser, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading: !!token && isLoading && !cachedUser, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -10,7 +10,8 @@ import {
   LogOut, 
   Calculator,
   UserCog,
-  UsersRound
+  UsersRound,
+  CircleUser
 } from "lucide-react";
 import logo from "@assets/full_logo_navbar_1780868246991.png";
 
@@ -66,15 +67,26 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center px-4 py-3 mb-2">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-sm">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+          <Link href="/tableau-de-bord/profil">
+            <div className="flex items-center px-4 py-3 mb-2 rounded-md hover:bg-sidebar-accent/50 cursor-pointer transition-colors">
+              {(user as any)?.avatarUrl ? (
+                <img
+                  src={`/api/storage${(user as any).avatarUrl}`}
+                  alt="Avatar"
+                  className="w-8 h-8 rounded-full object-cover border border-sidebar-border shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-sm shrink-0">
+                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                </div>
+              )}
+              <div className="ml-3 truncate">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-sidebar-foreground/60">{({"superadmin":"Super Admin","admin":"Administrateur","agency_manager":"Directeur d'agence","agent":"Agent","client":"Client"} as Record<string,string>)[user?.role ?? ""] ?? user?.role}</p>
+              </div>
+              <CircleUser className="ml-auto w-4 h-4 text-sidebar-foreground/40 shrink-0" />
             </div>
-            <div className="ml-3 truncate">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-sidebar-foreground/60">{({"superadmin":"Super Admin","admin":"Administrateur","agency_manager":"Directeur d'agence","agent":"Agent","client":"Client"} as Record<string,string>)[user?.role ?? ""] ?? user?.role}</p>
-            </div>
-          </div>
+          </Link>
           <Button 
             variant="ghost" 
             className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"

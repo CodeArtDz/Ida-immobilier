@@ -81,6 +81,8 @@ export * from './registerInput';
 export * from './savedSearch';
 export * from './savedSearchInput';
 export * from './statGroup';
+export * from './uploadUrlRequest';
+export * from './uploadUrlResponse';
 export * from './user';
 export * from './userInput';
 export * from './userInputRole';
