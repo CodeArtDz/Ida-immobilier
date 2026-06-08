@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import {
   useGetProperty,
   useGetSimilarProperties,
+  useListPropertyMedia,
   getGetPropertyQueryKey,
   getGetSimilarPropertiesQueryKey,
+  getListPropertyMediaQueryKey,
   useCreateAppointment,
 } from "@workspace/api-client-react";
 import { PropertyCard } from "@/components/property-card";
@@ -22,6 +24,9 @@ import {
   X,
   CheckCircle2,
   User,
+  ChevronLeft,
+  ChevronRight,
+  Images,
 } from "lucide-react";
 import property1 from "@/assets/images/property-1.png";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +39,154 @@ function formatPrice(n: number) {
     maximumFractionDigits: 0,
   }).format(n);
 }
+
+// ─── Gallery Slider ──────────────────────────────────────────────────────────
+
+function PropertyGallery({
+  propertyId,
+  mainImageUrl,
+  title,
+}: {
+  propertyId: number;
+  mainImageUrl: string | null | undefined;
+  title: string;
+}) {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const { data: media } = useListPropertyMedia(propertyId, {
+    query: { queryKey: getListPropertyMediaQueryKey(propertyId) },
+  });
+
+  const photos =
+    media?.filter((m) => m.type === "photo").map((m) => m.url) ?? [];
+  const images =
+    photos.length > 0 ? photos : [mainImageUrl || property1 as string];
+  const total = images.length;
+
+  const prev = () => setCurrentIdx((i) => (i - 1 + total) % total);
+  const next = () => setCurrentIdx((i) => (i + 1) % total);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (lightboxOpen && e.key === "Escape") setLightboxOpen(false);
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [total, lightboxOpen]);
+
+  return (
+    <>
+      {/* Main slider */}
+      <div className="w-full h-[60vh] bg-muted relative overflow-hidden">
+        {images.map((url, idx) => (
+          <img
+            key={url ?? idx}
+            src={url || property1}
+            alt={`${title} — ${idx + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 cursor-zoom-in select-none
+              ${idx === currentIdx ? "opacity-100" : "opacity-0"}`}
+            onClick={() => setLightboxOpen(true)}
+            draggable={false}
+          />
+        ))}
+
+        {/* Gradient for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent pointer-events-none" />
+
+        {/* Prev / Next */}
+        {total > 1 && (
+          <>
+            <button
+              onClick={prev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
+
+        {/* Photo counter */}
+        {total > 1 && (
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-full">
+            <Images className="w-4 h-4" />
+            {currentIdx + 1} / {total}
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnail strip */}
+      {total > 1 && (
+        <div className="bg-muted/50 border-b border-border px-4 py-2 flex gap-2 overflow-x-auto scrollbar-thin">
+          {images.map((url, idx) => (
+            <button
+              key={url ?? idx}
+              onClick={() => setCurrentIdx(idx)}
+              className={`shrink-0 w-16 h-12 rounded overflow-hidden border-2 transition-all duration-200 hover:opacity-100
+                ${idx === currentIdx
+                  ? "border-primary opacity-100 scale-105"
+                  : "border-transparent opacity-60"}`}
+            >
+              <img
+                src={url || property1}
+                alt={`Miniature ${idx + 1}`}
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <img
+            src={images[currentIdx] || property1}
+            alt={`${title} — ${currentIdx + 1}`}
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+            draggable={false}
+          />
+          <button
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+            {currentIdx + 1} / {total} — appuyez sur ← → pour naviguer, Échap pour fermer
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── Visite Modal ─────────────────────────────────────────────────────────────
 
 function VisiteModal({
   property,
@@ -66,9 +219,7 @@ function VisiteModal({
       });
       return;
     }
-
     const scheduledAt = new Date(`${form.date}T${form.time}:00`);
-
     createAppointment.mutate(
       {
         data: {
@@ -114,7 +265,7 @@ function VisiteModal({
               Demande envoyée !
             </h3>
             <p className="text-muted-foreground mb-2">
-              Votre demande de visite a été transmise à{" "}
+              Votre demande a été transmise à{" "}
               <strong>{property.agentName || "votre agent"}</strong>.
             </p>
             <p className="text-sm text-muted-foreground mb-6">
@@ -154,9 +305,7 @@ function VisiteModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium block mb-1">
-                  Prénom *
-                </label>
+                <label className="text-xs font-medium block mb-1">Prénom *</label>
                 <Input
                   value={form.firstName}
                   onChange={(e) =>
@@ -190,9 +339,7 @@ function VisiteModal({
             </div>
 
             <div>
-              <label className="text-xs font-medium block mb-1">
-                Téléphone
-              </label>
+              <label className="text-xs font-medium block mb-1">Téléphone</label>
               <Input
                 type="tel"
                 value={form.phone}
@@ -261,6 +408,8 @@ function VisiteModal({
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function Annonce() {
   const { id } = useParams();
   const propertyId = parseInt(id || "0");
@@ -274,7 +423,10 @@ export default function Annonce() {
   });
 
   const { data: similarProperties } = useGetSimilarProperties(propertyId, {
-    query: { enabled: !!propertyId && !!property, queryKey: getGetSimilarPropertiesQueryKey(propertyId) },
+    query: {
+      enabled: !!propertyId && !!property,
+      queryKey: getGetSimilarPropertiesQueryKey(propertyId),
+    },
   });
 
   if (isLoading) {
@@ -294,10 +446,18 @@ export default function Annonce() {
   }
 
   const price = property.salePrice || property.rentalPrice;
-  const formattedPrice = price
-    ? formatPrice(price)
-    : "Prix sur demande";
+  const formattedPrice = price ? formatPrice(price) : "Prix sur demande";
   const isRental = !!property.rentalPrice;
+
+  const TYPE_LABEL: Record<string, string> = {
+    apartment: "Appartement",
+    house: "Maison",
+    villa: "Villa",
+    land: "Terrain",
+    commercial: "Local commercial",
+    garage: "Garage",
+    other: "Autre",
+  };
 
   return (
     <div className="bg-background min-h-screen">
@@ -305,24 +465,25 @@ export default function Annonce() {
         <VisiteModal property={property} onClose={() => setShowVisite(false)} />
       )}
 
-      {/* Gallery Header */}
-      <div className="w-full h-[60vh] bg-muted relative">
-        <img
-          src={property.mainImageUrl || property1}
-          alt={property.title}
-          className="w-full h-full object-cover"
+      {/* Gallery Slider + thumbnails */}
+      <div className="w-full relative">
+        <PropertyGallery
+          propertyId={propertyId}
+          mainImageUrl={property.mainImageUrl}
+          title={property.title}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent"></div>
 
-        <div className="absolute bottom-0 left-0 w-full">
-          <div className="container mx-auto px-4 pb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        {/* Hero overlay content */}
+        <div className="absolute bottom-0 left-0 w-full pointer-events-none"
+          style={{ bottom: 0 }}>
+          <div className="container mx-auto px-4 pb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 pointer-events-auto">
             <div className="text-foreground">
               <div className="flex items-center gap-3 mb-4">
                 <span className="bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold uppercase tracking-wider rounded-sm">
                   {isRental ? "À Louer" : "À Vendre"}
                 </span>
                 <span className="bg-accent text-accent-foreground px-3 py-1 text-sm font-semibold rounded-sm">
-                  {({"apartment":"Appartement","house":"Maison","villa":"Villa","land":"Terrain","commercial":"Local commercial","garage":"Garage","other":"Autre"} as Record<string,string>)[property.type] ?? property.type}
+                  {TYPE_LABEL[property.type] ?? property.type}
                 </span>
               </div>
               <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">
@@ -338,8 +499,7 @@ export default function Annonce() {
                 {formattedPrice}
                 {isRental && (
                   <span className="text-xl font-normal text-foreground/60">
-                    {" "}
-                    /mois
+                    {" "}/mois
                   </span>
                 )}
               </div>
@@ -366,12 +526,8 @@ export default function Annonce() {
                     <Maximize className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Surface habitable
-                    </p>
-                    <p className="font-semibold text-lg">
-                      {property.livingArea} m²
-                    </p>
+                    <p className="text-sm text-muted-foreground">Surface habitable</p>
+                    <p className="font-semibold text-lg">{property.livingArea} m²</p>
                   </div>
                 </div>
               )}
@@ -400,9 +556,7 @@ export default function Annonce() {
             </div>
 
             <div>
-              <h2 className="font-serif text-2xl font-bold text-primary mb-6">
-                Description
-              </h2>
+              <h2 className="font-serif text-2xl font-bold text-primary mb-6">Description</h2>
               <div className="prose prose-lg text-foreground/80 max-w-none">
                 <p className="whitespace-pre-line">
                   {property.fullDescription ||
@@ -413,68 +567,56 @@ export default function Annonce() {
             </div>
 
             <div>
-              <h2 className="font-serif text-2xl font-bold text-primary mb-6">
-                Prestations
-              </h2>
+              <h2 className="font-serif text-2xl font-bold text-primary mb-6">Prestations</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {property.hasTerrace && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Terrasse
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Terrasse
                   </div>
                 )}
                 {property.hasBalcony && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Balcon
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Balcon
                   </div>
                 )}
                 {property.hasGarden && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Jardin
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Jardin
                   </div>
                 )}
                 {property.hasPool && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Piscine
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Piscine
                   </div>
                 )}
                 {property.hasGarage && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Garage
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Garage
                   </div>
                 )}
                 {property.hasParking && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Parking
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Parking
                   </div>
                 )}
                 {property.hasCellar && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Cave
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Cave
                   </div>
                 )}
                 {property.hasElevator && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Ascenseur
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Ascenseur
                   </div>
                 )}
                 {property.hasAirConditioning && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Climatisation
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Climatisation
                   </div>
                 )}
                 {property.hasFiber && (
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>{" "}
-                    Fibre optique
+                    <span className="w-2 h-2 rounded-full bg-accent" /> Fibre optique
                   </div>
                 )}
               </div>
@@ -491,7 +633,12 @@ export default function Annonce() {
                       <div className="text-sm font-semibold mb-2">DPE</div>
                       <div
                         className={`w-16 h-16 rounded-md flex items-center justify-center text-white font-bold text-2xl
-                        ${property.dpeRating === "A" ? "bg-green-600" : property.dpeRating === "B" ? "bg-green-500" : property.dpeRating === "C" ? "bg-green-400" : property.dpeRating === "D" ? "bg-yellow-500" : property.dpeRating === "E" ? "bg-orange-500" : property.dpeRating === "F" ? "bg-orange-600" : "bg-red-600"}`}
+                        ${property.dpeRating === "A" ? "bg-green-600" :
+                          property.dpeRating === "B" ? "bg-green-500" :
+                          property.dpeRating === "C" ? "bg-green-400" :
+                          property.dpeRating === "D" ? "bg-yellow-500" :
+                          property.dpeRating === "E" ? "bg-orange-500" :
+                          property.dpeRating === "F" ? "bg-orange-600" : "bg-red-600"}`}
                       >
                         {property.dpeRating}
                       </div>
@@ -502,7 +649,12 @@ export default function Annonce() {
                       <div className="text-sm font-semibold mb-2">GES</div>
                       <div
                         className={`w-16 h-16 rounded-md flex items-center justify-center text-white font-bold text-2xl
-                        ${property.gesRating === "A" ? "bg-blue-300" : property.gesRating === "B" ? "bg-blue-400" : property.gesRating === "C" ? "bg-blue-500" : property.gesRating === "D" ? "bg-purple-500" : property.gesRating === "E" ? "bg-purple-600" : property.gesRating === "F" ? "bg-purple-700" : "bg-purple-800"}`}
+                        ${property.gesRating === "A" ? "bg-blue-300" :
+                          property.gesRating === "B" ? "bg-blue-400" :
+                          property.gesRating === "C" ? "bg-blue-500" :
+                          property.gesRating === "D" ? "bg-purple-500" :
+                          property.gesRating === "E" ? "bg-purple-600" :
+                          property.gesRating === "F" ? "bg-purple-700" : "bg-purple-800"}`}
                       >
                         {property.gesRating}
                       </div>
@@ -516,7 +668,6 @@ export default function Annonce() {
           {/* Agent contact sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-xl sticky top-24 overflow-hidden">
-              {/* Agent profile */}
               <div className="bg-primary p-6 text-primary-foreground">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-primary-foreground/20 overflow-hidden shrink-0">
@@ -527,7 +678,7 @@ export default function Annonce() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-primary-foreground font-bold text-2xl">
+                      <div className="w-full h-full flex items-center justify-center">
                         <User className="w-8 h-8 opacity-70" />
                       </div>
                     )}
@@ -596,12 +747,10 @@ export default function Annonce() {
                 </Button>
               </div>
 
-              <div className="px-6 pb-6 text-sm text-muted-foreground border-t border-border pt-4 mx-0 space-y-2">
+              <div className="px-6 pb-6 text-sm text-muted-foreground border-t border-border pt-4 space-y-2">
                 <div className="flex justify-between">
                   <span>Référence</span>
-                  <span className="font-mono text-foreground">
-                    IDA-{property.id}
-                  </span>
+                  <span className="font-mono text-foreground">IDA-{property.id}</span>
                 </div>
                 {property.agencyFees && (
                   <div className="flex justify-between">
