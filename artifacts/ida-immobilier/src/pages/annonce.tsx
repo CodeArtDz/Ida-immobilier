@@ -414,6 +414,16 @@ export default function Annonce() {
   const { id } = useParams();
   const propertyId = parseInt(id || "0");
   const [showVisite, setShowVisite] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactSending, setContactSending] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const { toast } = useToast();
 
   const { data: property, isLoading } = useGetProperty(propertyId, {
     query: {
@@ -720,22 +730,103 @@ export default function Annonce() {
                   </a>
                 )}
 
-                {property.agentEmail ? (
-                  <a
-                    href={`mailto:${property.agentEmail}?subject=Demande d'information - Réf. IDA-${property.id}`}
-                  >
-                    <Button className="w-full justify-start font-normal bg-primary hover:bg-primary/90 text-primary-foreground h-12">
-                      <Mail className="w-5 h-5 mr-3" />
-                      <span className="truncate">{property.agentEmail}</span>
-                    </Button>
-                  </a>
-                ) : (
-                  <a href="mailto:contact@ida-immobilier.com">
-                    <Button className="w-full justify-start font-normal bg-primary hover:bg-primary/90 text-primary-foreground h-12">
-                      <Mail className="w-5 h-5 mr-3" />
-                      Envoyer un message
-                    </Button>
-                  </a>
+                {/* Message button → inline form */}
+                <Button
+                  onClick={() => { setShowContactForm((v) => !v); setContactSent(false); }}
+                  className="w-full justify-start font-normal bg-primary hover:bg-primary/90 text-primary-foreground h-12"
+                >
+                  <Mail className="w-5 h-5 mr-3" />
+                  Envoyer un message
+                </Button>
+
+                {/* Inline contact form */}
+                {showContactForm && (
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    {contactSent ? (
+                      <div className="p-5 text-center">
+                        <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
+                        <p className="font-serif font-bold text-primary mb-1">Message envoyé !</p>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          {property.agentName || "Votre conseiller"} a bien reçu votre message. Un email de confirmation a également été transmis.
+                        </p>
+                        <button
+                          onClick={() => { setContactSent(false); setShowContactForm(false); setContactForm({ name: "", email: "", phone: "", message: "" }); }}
+                          className="text-xs text-primary underline"
+                        >
+                          Fermer
+                        </button>
+                      </div>
+                    ) : (
+                      <form
+                        className="p-4 space-y-3"
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!contactForm.name || !contactForm.email || !contactForm.message) {
+                            toast({ title: "Champs requis", description: "Veuillez remplir nom, email et message.", variant: "destructive" });
+                            return;
+                          }
+                          setContactSending(true);
+                          try {
+                            const res = await fetch(`/api/contact/property/${propertyId}`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ name: contactForm.name, email: contactForm.email, phone: contactForm.phone || undefined, message: contactForm.message }),
+                            });
+                            if (!res.ok) throw new Error();
+                            setContactSent(true);
+                          } catch {
+                            toast({ title: "Erreur", description: "Impossible d'envoyer le message. Réessayez.", variant: "destructive" });
+                          } finally {
+                            setContactSending(false);
+                          }
+                        }}
+                      >
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Contacter {property.agentName || "le conseiller"}
+                        </p>
+                        <Input
+                          placeholder="Votre nom *"
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
+                          className="h-9 text-sm"
+                          required
+                        />
+                        <Input
+                          type="email"
+                          placeholder="Votre email *"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                          className="h-9 text-sm"
+                          required
+                        />
+                        <Input
+                          type="tel"
+                          placeholder="Téléphone (optionnel)"
+                          value={contactForm.phone}
+                          onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
+                          className="h-9 text-sm"
+                        />
+                        <textarea
+                          placeholder={`Bonjour, je suis intéressé(e) par ce bien (Réf. IDA-${propertyId})...`}
+                          value={contactForm.message}
+                          onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
+                          rows={4}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                          required
+                        />
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">
+                          En envoyant ce message, votre demande est enregistrée dans notre plateforme et transmise par email à votre conseiller ainsi qu'à notre équipe.
+                        </p>
+                        <Button
+                          type="submit"
+                          disabled={contactSending}
+                          className="w-full bg-primary hover:bg-primary/90 h-10 font-serif text-sm"
+                        >
+                          {contactSending ? "Envoi en cours…" : "Envoyer"}
+                        </Button>
+                      </form>
+                    )}
+                  </div>
                 )}
 
                 <Button

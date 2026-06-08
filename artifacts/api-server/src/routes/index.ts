@@ -12,6 +12,7 @@ import notificationsRouter from "./notifications";
 import conversationsRouter from "./conversations";
 import estimationsRouter from "./estimations";
 import analyticsRouter from "./analytics";
+import contactRouter from "./contact";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(notificationsRouter);
 router.use(conversationsRouter);
 router.use(estimationsRouter);
 router.use(analyticsRouter);
+router.use(contactRouter);
 
 export default router;
