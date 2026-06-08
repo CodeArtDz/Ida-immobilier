@@ -1,8 +1,12 @@
-import { useListProperties } from "@workspace/api-client-react";
+import { useState } from "react";
+import { useListProperties, useListUsers } from "@workspace/api-client-react";
+import type { Property } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit2, Eye, MoreHorizontal } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Edit2, Eye, UserCog } from "lucide-react";
 import { Link } from "wouter";
+import { AssignAgentDialog } from "./assign-agent-dialog";
 
 const PROPERTY_STATUS_LABEL: Record<string, string> = {
   published: "Publié",
@@ -23,8 +27,19 @@ const PROPERTY_TYPE_LABEL: Record<string, string> = {
   other: "Autre",
 };
 
+const STAFF_ROLES = ["superadmin", "admin", "agency_manager", "agent"];
+
 export default function BiensList() {
-  const { data: propertiesResponse, isLoading } = useListProperties();
+  const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [assignTarget, setAssignTarget] = useState<Property | null>(null);
+
+  const { data: propertiesResponse, isLoading } = useListProperties(
+    agentFilter !== "all" ? { agentId: Number(agentFilter) } : undefined,
+  );
+  const { data: allUsers = [] } = useListUsers();
+  const agents = allUsers.filter((u) => STAFF_ROLES.includes(u.role));
+
+  const properties = propertiesResponse?.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -38,6 +53,24 @@ export default function BiensList() {
         </Link>
       </div>
 
+      {/* Filter by responsible agent */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <span className="text-sm text-muted-foreground">Agent responsable :</span>
+        <Select value={agentFilter} onValueChange={setAgentFilter}>
+          <SelectTrigger className="w-full sm:w-72">
+            <SelectValue placeholder="Tous les agents" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les agents</SelectItem>
+            {agents.map((a) => (
+              <SelectItem key={a.id} value={String(a.id)}>
+                {a.firstName} {a.lastName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
@@ -47,6 +80,7 @@ export default function BiensList() {
               <TableHead>Type</TableHead>
               <TableHead>Ville</TableHead>
               <TableHead>Prix</TableHead>
+              <TableHead>Agent responsable</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -54,32 +88,38 @@ export default function BiensList() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">Chargement...</TableCell>
+                <TableCell colSpan={8} className="text-center py-8">Chargement...</TableCell>
               </TableRow>
-            ) : propertiesResponse?.data && propertiesResponse.data.length > 0 ? (
-              propertiesResponse.data.map((property) => (
+            ) : properties.length > 0 ? (
+              properties.map((property) => (
                 <TableRow key={property.id}>
                   <TableCell className="font-mono text-xs">IDA-{property.id}</TableCell>
-                  <TableCell className="font-medium max-w-[300px] truncate">{property.title}</TableCell>
+                  <TableCell className="font-medium max-w-[260px] truncate">{property.title}</TableCell>
                   <TableCell>{PROPERTY_TYPE_LABEL[property.type] ?? property.type}</TableCell>
                   <TableCell>{property.city}</TableCell>
                   <TableCell>
-                    {property.salePrice 
+                    {property.salePrice
                       ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(property.salePrice)
-                      : property.rentalPrice 
+                      : property.rentalPrice
                         ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(property.rentalPrice) + '/m'
                         : '-'}
                   </TableCell>
+                  <TableCell className="text-sm">
+                    {property.agentName ?? <span className="text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-sm text-xs font-semibold uppercase tracking-wider
-                      ${property.status === 'published' ? 'bg-green-100 text-green-700' : 
-                        property.status === 'draft' ? 'bg-gray-100 text-gray-700' : 
+                      ${property.status === 'published' ? 'bg-green-100 text-green-700' :
+                        property.status === 'draft' ? 'bg-gray-100 text-gray-700' :
                         property.status === 'sold' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
                       {PROPERTY_STATUS_LABEL[property.status] ?? property.status}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" title="Changer l'agent responsable" onClick={() => setAssignTarget(property)}>
+                        <UserCog className="w-4 h-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" asChild>
                         <Link href={`/annonce/${property.id}`}><Eye className="w-4 h-4" /></Link>
                       </Button>
@@ -92,12 +132,19 @@ export default function BiensList() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun bien trouvé</TableCell>
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun bien trouvé</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
+      <AssignAgentDialog
+        property={assignTarget}
+        agents={agents}
+        open={!!assignTarget}
+        onOpenChange={(open) => !open && setAssignTarget(null)}
+      />
     </div>
   );
 }

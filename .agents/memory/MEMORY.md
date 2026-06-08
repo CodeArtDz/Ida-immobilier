@@ -2,3 +2,4 @@
 - [Sharp build approval](sharp-build-approval.md) — add `sharp` to onlyBuiltDependencies in pnpm-workspace.yaml before installing it
 - [Media upload architecture](media-upload.md) — multer + sharp upload endpoint, uploads served at /api/uploads/, watermarked files at uploads/watermarked/
 - [SEO score scans production](seo-spa-deployment.md) — Replit "Santé SEO" scores the published deployment, not dev; low score after dev SEO work = needs republish
+- [Testing auth-gated routes](testing-auth-routes.md) — live dev DB diverges from seed creds in replit.md; create a disposable scrypt admin (salt:hexkey) to e2e-test, then clean up

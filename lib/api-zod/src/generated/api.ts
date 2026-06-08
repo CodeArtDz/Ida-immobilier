@@ -654,8 +654,9 @@ export const AssignPropertyParams = zod.object({
 
 export const AssignPropertyBody = zod.object({
   "temporaryAgentId": zod.number(),
-  "startDate": zod.coerce.date(),
-  "endDate": zod.coerce.date(),
+  "permanent": zod.boolean().optional().describe('If true, reassigns the property to the agent permanently (changes the owner). If false\/omitted, a temporary assignment limited by startDate\/endDate is created.'),
+  "startDate": zod.coerce.date().optional(),
+  "endDate": zod.coerce.date().optional(),
   "reason": zod.string().optional()
 })
 

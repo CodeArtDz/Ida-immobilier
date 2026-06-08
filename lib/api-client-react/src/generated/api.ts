@@ -54,7 +54,6 @@ import type {
   MessageInput,
   Notification,
   Property,
-  PropertyAssignment,
   PropertyAssignmentInput,
   PropertyInput,
   PropertyListResponse,
@@ -1281,9 +1280,9 @@ export const getAssignPropertyUrl = (id: number,) => {
  * @summary Temporarily assign a property to another agent
  */
 export const assignProperty = async (id: number,
-    propertyAssignmentInput: PropertyAssignmentInput, options?: RequestInit): Promise<PropertyAssignment> => {
+    propertyAssignmentInput: PropertyAssignmentInput, options?: RequestInit): Promise<Property> => {
 
-  return customFetch<PropertyAssignment>(getAssignPropertyUrl(id),
+  return customFetch<Property>(getAssignPropertyUrl(id),
   {
     ...options,
     method: 'POST',

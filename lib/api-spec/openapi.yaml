@@ -415,7 +415,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PropertyAssignment"
+                $ref: "#/components/schemas/Property"
 
   /properties/{id}/similar:
     get:
@@ -1983,10 +1983,13 @@ components:
 
     PropertyAssignmentInput:
       type: object
-      required: [temporaryAgentId, startDate, endDate]
+      required: [temporaryAgentId]
       properties:
         temporaryAgentId:
           type: integer
+        permanent:
+          type: boolean
+          description: If true, reassigns the property to the agent permanently (changes the owner). If false/omitted, a temporary assignment limited by startDate/endDate is created.
         startDate:
           type: string
           format: date

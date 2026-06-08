@@ -8,7 +8,9 @@
 
 export interface PropertyAssignmentInput {
   temporaryAgentId: number;
-  startDate: Date;
-  endDate: Date;
+  /** If true, reassigns the property to the agent permanently (changes the owner). If false/omitted, a temporary assignment limited by startDate/endDate is created. */
+  permanent?: boolean;
+  startDate?: Date;
+  endDate?: Date;
   reason?: string;
 }

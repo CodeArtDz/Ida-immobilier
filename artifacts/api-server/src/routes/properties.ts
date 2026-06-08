@@ -9,8 +9,8 @@ import {
   favoritesTable,
   activityLogsTable,
 } from "@workspace/db";
-import { eq, and, desc, sql, ilike, gte, lte, count } from "drizzle-orm";
-import { requireAuth, optionalAuth } from "../lib/auth";
+import { eq, and, desc, sql, ilike, gte, lte, count, inArray } from "drizzle-orm";
+import { requireAuth, optionalAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
 import multer from "multer";
 import path from "path";
@@ -41,6 +41,66 @@ const upload = multer({
 });
 
 const router = Router();
+
+/**
+ * Resolves the effective responsible agent for a set of properties.
+ * Honors temporary assignments: while an assignment is active and today is within
+ * its date range, the temporary agent is responsible. Once the end date has passed,
+ * the assignment is lazily expired (marked inactive) and the property reverts to its owner.
+ * Returns a Map of propertyId -> effective agent userId.
+ */
+async function resolveEffectiveAgents(
+  props: { id: number; ownerAgentId: number; currentAgentId: number | null }[],
+): Promise<Map<number, number>> {
+  const result = new Map<number, number>();
+  if (props.length === 0) return result;
+
+  const ids = props.map((p) => p.id);
+  const activeAssignments = await db
+    .select()
+    .from(propertyAssignmentsTable)
+    .where(and(inArray(propertyAssignmentsTable.propertyId, ids), eq(propertyAssignmentsTable.isActive, true)));
+
+  const today = new Date().toISOString().slice(0, 10);
+  const byProp = new Map<number, (typeof activeAssignments)[number]>();
+  for (const a of activeAssignments) byProp.set(a.propertyId, a);
+
+  const expiredAssignmentIds: number[] = [];
+  const expiredPropIds: number[] = [];
+
+  for (const p of props) {
+    const a = byProp.get(p.id);
+    if (a) {
+      if (today < a.startDate) {
+        // Assignment hasn't started yet — owner is still responsible.
+        result.set(p.id, p.ownerAgentId);
+      } else if (today <= a.endDate) {
+        // Assignment is active within its window.
+        result.set(p.id, a.temporaryAgentId);
+      } else {
+        // Assignment has ended — lazily expire and revert to owner.
+        expiredAssignmentIds.push(a.id);
+        expiredPropIds.push(p.id);
+        result.set(p.id, p.ownerAgentId);
+      }
+    } else {
+      result.set(p.id, p.currentAgentId ?? p.ownerAgentId);
+    }
+  }
+
+  if (expiredAssignmentIds.length > 0) {
+    await db
+      .update(propertyAssignmentsTable)
+      .set({ isActive: false })
+      .where(inArray(propertyAssignmentsTable.id, expiredAssignmentIds));
+    await db
+      .update(propertiesTable)
+      .set({ currentAgentId: sql`${propertiesTable.ownerAgentId}` })
+      .where(inArray(propertiesTable.id, expiredPropIds));
+  }
+
+  return result;
+}
 
 // GET /properties
 router.get("/properties", optionalAuth, async (req, res) => {
@@ -99,14 +159,15 @@ router.get("/properties", optionalAuth, async (req, res) => {
 
     const total = totalResult[0]?.count ?? 0;
 
+    // Resolve effective responsible agent per property (honors temporary assignments)
+    const effectiveAgents = await resolveEffectiveAgents(properties);
+
     // Enrich with agent/agency info and main image
     const enriched = await Promise.all(properties.map(async (p) => {
+      const effAgentId = effectiveAgents.get(p.id) ?? p.ownerAgentId;
       const [agent, agency, [mainMedia]] = await Promise.all([
-        p.currentAgentId
-          ? db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, phone: usersTable.phone, email: usersTable.email, avatarUrl: usersTable.avatarUrl })
-              .from(usersTable).where(eq(usersTable.id, p.currentAgentId)).then(r => r[0])
-          : db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, phone: usersTable.phone, email: usersTable.email, avatarUrl: usersTable.avatarUrl })
-              .from(usersTable).where(eq(usersTable.id, p.ownerAgentId)).then(r => r[0]),
+        db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, phone: usersTable.phone, email: usersTable.email, avatarUrl: usersTable.avatarUrl })
+            .from(usersTable).where(eq(usersTable.id, effAgentId)).then(r => r[0]),
         db.select({ name: agenciesTable.name }).from(agenciesTable).where(eq(agenciesTable.id, p.agencyId)).then(r => r[0]),
         db.select({ url: propertyMediaTable.url }).from(propertyMediaTable)
           .where(and(eq(propertyMediaTable.propertyId, p.id), eq(propertyMediaTable.type, "photo")))
@@ -115,6 +176,7 @@ router.get("/properties", optionalAuth, async (req, res) => {
       ]);
       return {
         ...p,
+        currentAgentId: effAgentId,
         salePrice: p.salePrice ? parseFloat(p.salePrice) : null,
         rentalPrice: p.rentalPrice ? parseFloat(p.rentalPrice) : null,
         charges: p.charges ? parseFloat(p.charges) : null,
@@ -220,7 +282,8 @@ router.get("/properties/:id", optionalAuth, async (req, res) => {
     // Increment view count
     await db.update(propertiesTable).set({ viewCount: property.viewCount + 1 }).where(eq(propertiesTable.id, id));
 
-    const agentId = property.currentAgentId || property.ownerAgentId;
+    const effective = await resolveEffectiveAgents([property]);
+    const agentId = effective.get(property.id) ?? property.ownerAgentId;
     const [agent, agency, [mainMedia]] = await Promise.all([
       db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, phone: usersTable.phone, email: usersTable.email, avatarUrl: usersTable.avatarUrl })
         .from(usersTable).where(eq(usersTable.id, agentId)).then(r => r[0]),
@@ -232,6 +295,7 @@ router.get("/properties/:id", optionalAuth, async (req, res) => {
 
     res.json({
       ...property,
+      currentAgentId: agentId,
       salePrice: property.salePrice ? parseFloat(property.salePrice) : null,
       rentalPrice: property.rentalPrice ? parseFloat(property.rentalPrice) : null,
       charges: property.charges ? parseFloat(property.charges) : null,
@@ -435,23 +499,90 @@ router.delete("/properties/:id/media/:mediaId", requireAuth, async (req, res) =>
   }
 });
 
-// POST /properties/:id/assign
-router.post("/properties/:id/assign", requireAuth, async (req, res) => {
+// POST /properties/:id/assign — change the responsible agent (permanently or temporarily)
+router.post("/properties/:id/assign", requireAuth, requireRole("superadmin", "admin", "agency_manager"), async (req, res) => {
   try {
-    const user = (req as any).user;
-    const [property] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, parseInt(req.params.id as string)));
+    const id = parseInt(req.params.id as string);
+    const [property] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
     if (!property) { res.status(404).json({ error: "Bien non trouvé" }); return; }
-    const [assignment] = await db.insert(propertyAssignmentsTable).values({
-      propertyId: property.id,
-      ownerAgentId: property.ownerAgentId,
-      temporaryAgentId: req.body.temporaryAgentId,
-      startDate: req.body.startDate,
-      endDate: req.body.endDate,
-      reason: req.body.reason || null,
-    }).returning();
-    // Update property current agent
-    await db.update(propertiesTable).set({ currentAgentId: req.body.temporaryAgentId }).where(eq(propertiesTable.id, property.id));
-    res.status(201).json(assignment);
+
+    const { temporaryAgentId, permanent, startDate, endDate, reason } = req.body;
+    if (!temporaryAgentId) { res.status(400).json({ error: "Agent requis" }); return; }
+
+    // Validate the target agent exists and is staff (not a client)
+    const [targetAgent] = await db.select().from(usersTable).where(eq(usersTable.id, temporaryAgentId));
+    if (!targetAgent || targetAgent.role === "client") { res.status(400).json({ error: "Agent invalide" }); return; }
+
+    // End any existing active assignment for this property
+    await db.update(propertyAssignmentsTable)
+      .set({ isActive: false })
+      .where(and(eq(propertyAssignmentsTable.propertyId, id), eq(propertyAssignmentsTable.isActive, true)));
+
+    if (permanent) {
+      // Permanent reassignment: the new agent becomes the owner and current agent.
+      // Keep agencyId consistent with the agent's agency when known.
+      await db.update(propertiesTable)
+        .set({
+          ownerAgentId: temporaryAgentId,
+          currentAgentId: temporaryAgentId,
+          agencyId: targetAgent.agencyId ?? property.agencyId,
+        })
+        .where(eq(propertiesTable.id, id));
+    } else {
+      // Temporary assignment requires a date range
+      if (!startDate || !endDate) {
+        res.status(400).json({ error: "Dates de début et de fin requises pour une assignation temporaire" });
+        return;
+      }
+      if (endDate < startDate) {
+        res.status(400).json({ error: "La date de fin doit être postérieure à la date de début" });
+        return;
+      }
+      await db.insert(propertyAssignmentsTable).values({
+        propertyId: id,
+        ownerAgentId: property.ownerAgentId,
+        temporaryAgentId,
+        startDate,
+        endDate,
+        reason: reason || null,
+        isActive: true,
+      });
+      // Only switch the current agent if the assignment window has already started.
+      // Future-dated assignments keep the owner responsible until startDate.
+      const today = new Date().toISOString().slice(0, 10);
+      const currentAgentId = startDate <= today ? temporaryAgentId : property.ownerAgentId;
+      await db.update(propertiesTable).set({ currentAgentId }).where(eq(propertiesTable.id, id));
+    }
+
+    // Return the updated, enriched property
+    const [updated] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
+    const effective = await resolveEffectiveAgents([updated]);
+    const effAgentId = effective.get(id) ?? updated.ownerAgentId;
+    const [agent, agency, [mainMedia]] = await Promise.all([
+      db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, phone: usersTable.phone, email: usersTable.email, avatarUrl: usersTable.avatarUrl })
+        .from(usersTable).where(eq(usersTable.id, effAgentId)).then(r => r[0]),
+      db.select({ name: agenciesTable.name }).from(agenciesTable).where(eq(agenciesTable.id, updated.agencyId)).then(r => r[0]),
+      db.select({ url: propertyMediaTable.url }).from(propertyMediaTable)
+        .where(and(eq(propertyMediaTable.propertyId, id), eq(propertyMediaTable.type, "photo")))
+        .orderBy(propertyMediaTable.order).limit(1),
+    ]);
+
+    res.status(201).json({
+      ...updated,
+      currentAgentId: effAgentId,
+      salePrice: updated.salePrice ? parseFloat(updated.salePrice) : null,
+      rentalPrice: updated.rentalPrice ? parseFloat(updated.rentalPrice) : null,
+      charges: updated.charges ? parseFloat(updated.charges) : null,
+      agencyFees: updated.agencyFees ? parseFloat(updated.agencyFees) : null,
+      taxeFonciere: updated.taxeFonciere ? parseFloat(updated.taxeFonciere) : null,
+      annualEnergyCost: updated.annualEnergyCost ? parseFloat(updated.annualEnergyCost) : null,
+      agentName: agent ? `${agent.firstName} ${agent.lastName}` : null,
+      agentPhone: agent?.phone ?? null,
+      agentEmail: agent?.email ?? null,
+      agentAvatarUrl: agent?.avatarUrl ?? null,
+      agencyName: agency?.name ?? null,
+      mainImageUrl: mainMedia?.url ?? null,
+    });
   } catch (err) {
     logger.error({ err }, "Assign property error");
     res.status(500).json({ error: "Erreur serveur" });
