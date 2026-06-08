@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { appointmentsTable, propertiesTable, usersTable, activityLogsTable } from "@workspace/db";
 import { eq, and, gte, lte } from "drizzle-orm";
-import { requireAuth, requireRole } from "../lib/auth";
+import { requireAuth, requireRole, optionalAuth } from "../lib/auth";
 import { sendAppointmentUpdateEmail, type AppointmentEmailKind } from "../lib/mailer";
 import { logger } from "../lib/logger";
 
@@ -61,16 +61,23 @@ router.get("/appointments/:id", requireAuth, async (req, res) => {
 });
 
 // POST /appointments
-router.post("/appointments", requireAuth, async (req, res) => {
+router.post("/appointments", optionalAuth, async (req, res) => {
   try {
     const user = (req as any).user;
-    const [appt] = await db.insert(appointmentsTable).values({ ...req.body, scheduledAt: new Date(req.body.scheduledAt) }).returning();
+    // Guests (no account) can request a visit, so clientId must come from a real
+    // logged-in user only — never trust a clientId in the request body.
+    const { clientId: _ignoredClientId, ...body } = req.body ?? {};
+    const [appt] = await db.insert(appointmentsTable).values({
+      ...body,
+      clientId: user?.id ?? null,
+      scheduledAt: new Date(req.body.scheduledAt),
+    }).returning();
     await db.insert(activityLogsTable).values({
       type: "appointment_booked",
       description: `Rendez-vous planifié`,
       entityId: appt.id,
       entityType: "appointment",
-      actorId: user.id,
+      actorId: user?.id ?? null,
     });
     res.status(201).json(await enrichAppointment(appt));
   } catch (err) {
