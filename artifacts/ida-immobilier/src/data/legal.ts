@@ -39,7 +39,7 @@ export const COMPANY = {
 export const HOST = {
   name: "Replit, Inc.",
   address: "767 Bryant St. #203, San Francisco, CA 94107, États-Unis",
-  phone: TODO, // téléphone de l'hébergeur (art. 6 III LCEN)
+  phone: "+213 (0) 671 36 91 79", // téléphone de l'hébergeur (art. 6 III LCEN)
   website: "https://replit.com",
 } as const;
 
