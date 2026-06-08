@@ -43,6 +43,8 @@ import {
 import property1 from "@/assets/images/property-1.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 
 function formatPrice(n: number) {
   return new Intl.NumberFormat("fr-FR", {
@@ -51,6 +53,18 @@ function formatPrice(n: number) {
     maximumFractionDigits: 0,
   }).format(n);
 }
+
+const TYPE_LABEL_MAP: Record<string, string> = {
+  apartment: "Appartement",
+  house: "Maison",
+  villa: "Villa",
+  land: "Terrain",
+  commercial: "Local commercial",
+  garage: "Garage",
+  building: "Immeuble",
+  programme: "Programme neuf",
+  other: "Bien immobilier",
+};
 
 // ─── Gallery Slider ──────────────────────────────────────────────────────────
 
@@ -450,6 +464,73 @@ export default function Annonce() {
       queryKey: getGetSimilarPropertiesQueryKey(propertyId),
     },
   });
+
+  const seoPrice = property?.salePrice || property?.rentalPrice;
+  const seoTypeLabel = TYPE_LABEL_MAP[property?.type ?? ""] ?? "Bien immobilier";
+  const seoTitle = property
+    ? `${seoTypeLabel}${property.rooms ? ` ${property.rooms} pièces` : ""} à ${property.city}${seoPrice ? ` — ${formatPrice(seoPrice)}` : ""}`
+    : undefined;
+  const seoDesc = property
+    ? `${seoTypeLabel}${property.livingArea ? ` de ${property.livingArea} m²` : ""}${property.rooms ? `, ${property.rooms} pièces` : ""}${property.bedrooms ? `, ${property.bedrooms} chambre${property.bedrooms > 1 ? "s" : ""}` : ""} à ${property.city} (${property.postalCode}). ${seoPrice ? `Prix : ${formatPrice(seoPrice)}${property.rentalPrice ? "/mois" : ""}. ` : ""}I.D.A Immobilier — agence immobilière de prestige en Provence.`
+    : undefined;
+
+  useSeo({
+    title: seoTitle,
+    description: seoDesc,
+    canonical: `https://ida-immobilier.com/annonce/${propertyId}`,
+    ogType: "article",
+    ogImage: property?.mainImageUrl ?? undefined,
+  });
+
+  useJsonLd(
+    property
+      ? {
+          "@context": "https://schema.org",
+          "@type": "RealEstateListing",
+          name: property.title,
+          description: seoDesc,
+          url: `https://ida-immobilier.com/annonce/${propertyId}`,
+          ...(property.mainImageUrl ? { image: [property.mainImageUrl] } : {}),
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: property.address,
+            addressLocality: property.city,
+            postalCode: property.postalCode,
+            addressRegion: property.region ?? "Bouches-du-Rhône",
+            addressCountry: "FR",
+          },
+          ...(property.latitude && property.longitude
+            ? { geo: { "@type": "GeoCoordinates", latitude: property.latitude, longitude: property.longitude } }
+            : {}),
+          ...(seoPrice
+            ? {
+                offers: {
+                  "@type": "Offer",
+                  price: seoPrice,
+                  priceCurrency: "EUR",
+                  availability: "https://schema.org/InStock",
+                },
+              }
+            : {}),
+          ...(property.livingArea ? { floorSize: { "@type": "QuantitativeValue", value: property.livingArea, unitCode: "MTK" } } : {}),
+          ...(property.rooms ? { numberOfRooms: property.rooms } : {}),
+          ...(property.bedrooms ? { numberOfBedrooms: property.bedrooms } : {}),
+          breadcrumb: {
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Accueil", item: "https://ida-immobilier.com/" },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: property.rentalPrice ? "Louer" : "Acheter",
+                item: property.rentalPrice ? "https://ida-immobilier.com/louer" : "https://ida-immobilier.com/acheter",
+              },
+              { "@type": "ListItem", position: 3, name: property.title, item: `https://ida-immobilier.com/annonce/${propertyId}` },
+            ],
+          },
+        }
+      : null,
+  );
 
   if (isLoading) {
     return (

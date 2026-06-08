@@ -5,9 +5,35 @@ import { Button } from "@/components/ui/button";
 import { useListFeaturedProperties } from "@workspace/api-client-react";
 import { PropertyCard } from "@/components/property-card";
 import heroBg from "@/assets/images/hero-bg.png";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 
 export default function Home() {
   const { data: featuredProperties, isLoading } = useListFeaturedProperties();
+
+  useSeo({
+    title: "Agence Immobilière de Prestige en Provence",
+    description:
+      "Découvrez les biens d'exception I.D.A Immobilier à Marignane, Marseille, Aix-en-Provence. Vente, location, estimation — votre expert immobilier en Provence-Alpes-Côte d'Azur.",
+    canonical: "https://ida-immobilier.com/",
+  });
+
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "I.D.A Immobilier",
+    url: "https://ida-immobilier.com",
+    description:
+      "Agence immobilière de prestige à Marignane, Provence. Achat, vente, location et estimation de biens d'exception.",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://ida-immobilier.com/acheter?q={search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
+  });
 
   return (
     <div>

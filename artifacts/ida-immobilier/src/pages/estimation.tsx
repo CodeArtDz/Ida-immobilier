@@ -12,6 +12,8 @@ import { useCreateEstimation } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { TrendingUp, MapPin, Ruler, CheckCircle2, ArrowRight } from "lucide-react";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 
 interface EstimateResult {
   low: number;
@@ -142,6 +144,21 @@ const CONDITION_LABELS: Record<string, string> = {
 };
 
 export default function Estimation() {
+  useSeo({
+    title: "Estimation gratuite de votre bien immobilier",
+    description:
+      "Obtenez une estimation gratuite et instantanée de votre bien en Provence. Appartement, maison, villa — I.D.A Immobilier évalue votre patrimoine en quelques minutes.",
+    canonical: "https://ida-immobilier.com/estimation",
+  });
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: "https://ida-immobilier.com/" },
+      { "@type": "ListItem", position: 2, name: "Estimation", item: "https://ida-immobilier.com/estimation" },
+    ],
+  });
+
   const { toast } = useToast();
   const createEstimation = useCreateEstimation();
   const [step, setStep] = useState(1);

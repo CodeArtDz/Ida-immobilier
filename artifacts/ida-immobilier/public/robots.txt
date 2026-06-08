@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
-Disallow: /tableau-de-bord/
-Disallow: /espace-client/
 
-Sitemap: https://ida-immobilier.fr/sitemap.xml
+Disallow: /espace-client/
+Disallow: /tableau-de-bord/
+Disallow: /connexion
+Disallow: /inscription
+Disallow: /api/
+
+Sitemap: https://ida-immobilier.com/sitemap.xml

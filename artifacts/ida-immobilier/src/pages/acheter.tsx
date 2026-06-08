@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Map, LayoutGrid, RotateCcw } from "lucide-react";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 
 const FEATURES = [
   { key: "hasTerrace", label: "Terrasse" },
@@ -25,6 +27,21 @@ const FEATURES = [
 type FeatureKey = typeof FEATURES[number]["key"];
 
 export default function Acheter() {
+  useSeo({
+    title: "Acheter un bien immobilier en Provence",
+    description:
+      "Parcourez nos annonces de vente : appartements, maisons, villas et terrains à Marignane, Aix-en-Provence, Marseille et dans tout le Var. Trouvez le bien de vos rêves avec I.D.A Immobilier.",
+    canonical: "https://ida-immobilier.com/acheter",
+  });
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: "https://ida-immobilier.com/" },
+      { "@type": "ListItem", position: 2, name: "Acheter", item: "https://ida-immobilier.com/acheter" },
+    ],
+  });
+
   const [city, setCity] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");

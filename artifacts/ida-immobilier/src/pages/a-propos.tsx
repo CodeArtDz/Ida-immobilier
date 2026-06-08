@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 import { Button } from "@/components/ui/button";
 import logoSquare from "@assets/full_logo3__1780868246992.png";
 import {
@@ -44,6 +46,21 @@ const STATS = [
 ];
 
 export default function APropos() {
+  useSeo({
+    title: "À propos de I.D.A Immobilier — Notre histoire",
+    description:
+      "Fondée à Marignane, I.D.A Immobilier est votre agence de confiance pour l'immobilier de prestige en Provence. Excellence, proximité et expertise depuis plus de 15 ans.",
+    canonical: "https://ida-immobilier.com/a-propos",
+  });
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: "https://ida-immobilier.com/" },
+      { "@type": "ListItem", position: 2, name: "À propos", item: "https://ida-immobilier.com/a-propos" },
+    ],
+  });
+
   return (
     <div>
       {/* Hero */}

@@ -4,9 +4,26 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 import heroBg from "@/assets/images/hero-bg.png";
 
 export default function Contact() {
+  useSeo({
+    title: "Contact — I.D.A Immobilier Marignane",
+    description:
+      "Contactez I.D.A Immobilier au 16 av de la 1ère armée française, Marignane (13700). Tél : +33 6 66 37 17 37. Nos experts répondent à toutes vos questions immobilières.",
+    canonical: "https://ida-immobilier.com/contact",
+  });
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: "https://ida-immobilier.com/" },
+      { "@type": "ListItem", position: 2, name: "Contact", item: "https://ida-immobilier.com/contact" },
+    ],
+  });
+
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     firstName: "",

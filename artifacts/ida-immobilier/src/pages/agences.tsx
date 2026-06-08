@@ -1,7 +1,24 @@
 import { useListAgencies } from "@workspace/api-client-react";
 import { MapPin, Phone, Mail } from "lucide-react";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 
 export default function Agences() {
+  useSeo({
+    title: "Nos Agences en Provence — I.D.A Immobilier",
+    description:
+      "Retrouvez les agences I.D.A Immobilier en Provence. Experts locaux de l'immobilier de prestige à Marignane et dans les Bouches-du-Rhône.",
+    canonical: "https://ida-immobilier.com/nos-agences",
+  });
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: "https://ida-immobilier.com/" },
+      { "@type": "ListItem", position: 2, name: "Nos agences", item: "https://ida-immobilier.com/nos-agences" },
+    ],
+  });
+
   const { data: agencies, isLoading } = useListAgencies();
 
   return (

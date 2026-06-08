@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import { useSeo } from "@/hooks/use-seo";
+import { useJsonLd } from "@/hooks/use-json-ld";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,6 +79,21 @@ const PROGRAMMES = [
 ];
 
 export default function ProgrammesNeufs() {
+  useSeo({
+    title: "Programmes neufs en Provence — I.D.A Immobilier",
+    description:
+      "Découvrez nos programmes immobiliers neufs à Marignane, Aix-en-Provence et dans les Bouches-du-Rhône. Avantages fiscaux, garanties constructeur, normes RE2020.",
+    canonical: "https://ida-immobilier.com/programmes-neufs",
+  });
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: "https://ida-immobilier.com/" },
+      { "@type": "ListItem", position: 2, name: "Programmes neufs", item: "https://ida-immobilier.com/programmes-neufs" },
+    ],
+  });
+
   const { toast } = useToast();
   const [sent, setSent] = useState(false);
   const [form, setForm] = useState({
