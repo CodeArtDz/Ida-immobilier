@@ -25,11 +25,14 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold mb-6 drop-shadow-lg">
-              L'Art de Vivre en Provence
+            <p className="text-accent font-semibold uppercase tracking-widest text-sm mb-4 drop-shadow">
+              Marignane — Provence — Méditerranée
+            </p>
+            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold mb-6 drop-shadow-lg leading-tight">
+              L'Excellence<br />Immobilière<br />en Provence
             </h1>
-            <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 text-primary-foreground/90 font-light">
-              Découvrez notre collection exclusive de propriétés de prestige à travers Marseille, Aix-en-Provence et ses environs.
+            <p className="text-base md:text-lg max-w-2xl mx-auto mb-10 text-primary-foreground/85 font-light">
+              Vente, location et estimation de biens d'exception à Marignane, Marseille, Aix-en-Provence et dans toute la région.
             </p>
           </motion.div>
 

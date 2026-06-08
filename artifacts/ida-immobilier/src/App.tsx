@@ -15,6 +15,8 @@ import Annonce from "@/pages/annonce";
 import Estimation from "@/pages/estimation";
 import Contact from "@/pages/contact";
 import Agences from "@/pages/agences";
+import ProgrammesNeufs from "@/pages/programmes-neufs";
+import APropos from "@/pages/a-propos";
 import Connexion from "@/pages/connexion";
 import Inscription from "@/pages/inscription";
 import NotFound from "@/pages/not-found";
@@ -62,6 +64,8 @@ function Router() {
       <Route path="/estimation" component={() => <PublicRoute component={Estimation} />} />
       <Route path="/contact" component={() => <PublicRoute component={Contact} />} />
       <Route path="/nos-agences" component={() => <PublicRoute component={Agences} />} />
+      <Route path="/programmes-neufs" component={() => <PublicRoute component={ProgrammesNeufs} />} />
+      <Route path="/a-propos" component={() => <PublicRoute component={APropos} />} />
       
       <Route path="/connexion" component={Connexion} />
       <Route path="/inscription" component={Inscription} />

@@ -17,8 +17,9 @@ export function Footer() {
           <ul className="space-y-3 text-sm">
             <li><Link href="/acheter" className="hover:text-accent transition-colors">Acheter</Link></li>
             <li><Link href="/louer" className="hover:text-accent transition-colors">Louer</Link></li>
+            <li><Link href="/programmes-neufs" className="hover:text-accent transition-colors">Programmes Neufs</Link></li>
             <li><Link href="/estimation" className="hover:text-accent transition-colors">Faire estimer son bien</Link></li>
-            <li><Link href="/nos-agences" className="hover:text-accent transition-colors">Nos Agences</Link></li>
+            <li><Link href="/a-propos" className="hover:text-accent transition-colors">À Propos</Link></li>
           </ul>
         </div>
 
@@ -34,10 +35,10 @@ export function Footer() {
 
         <div>
           <h4 className="font-serif text-lg mb-6 text-accent">Contact</h4>
-          <ul className="space-y-3 text-sm text-primary-foreground/80">
-            <li>12 Avenue des Champs, 13700 Marignane</li>
-            <li>contact@ida-immobilier.fr</li>
-            <li>+33 (0)4 42 00 00 00</li>
+          <ul className="space-y-4 text-sm text-primary-foreground/80">
+            <li>16 av de la 1ère armée française<br />13700 Marignane, France</li>
+            <li><a href="tel:+33666371737" className="hover:text-accent transition-colors">+33 6 66 37 17 37</a></li>
+            <li><a href="mailto:contact@ida-immobilier.com" className="hover:text-accent transition-colors">contact@ida-immobilier.com</a></li>
           </ul>
         </div>
       </div>
