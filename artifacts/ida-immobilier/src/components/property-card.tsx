@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
-import { MapPin, Bed, Bath, Maximize, ChevronLeft, ChevronRight, Images, Trees, Car } from "lucide-react";
+import { MapPin, Bed, Maximize, ChevronLeft, ChevronRight, Images, Trees, Home, Building2 } from "lucide-react";
 import type { Property } from "@workspace/api-client-react";
 import { useListPropertyMedia, getListPropertyMediaQueryKey } from "@workspace/api-client-react";
 import property1 from "@/assets/images/property-1.png";
@@ -194,13 +194,13 @@ export function PropertyCard({ property }: { property: Property }) {
           )}
           {property.rooms != null && (
             <div className="flex items-center gap-1.5">
-              <Bath className="w-3.5 h-3.5 text-accent" />
+              <Home className="w-3.5 h-3.5 text-accent" />
               <span>{property.rooms} p.</span>
             </div>
           )}
           {p.floor != null && property.type === "apartment" && (
             <div className="flex items-center gap-1.5">
-              <Car className="w-3.5 h-3.5 text-accent" />
+              <Building2 className="w-3.5 h-3.5 text-accent" />
               <span>Étage {p.floor}</span>
             </div>
           )}
