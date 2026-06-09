@@ -27,8 +27,15 @@ both ends normalizes them so render sites don't care which backend produced them
   `process.env.VERCEL` or you exhaust Postgres connections.
 - Build tooling that hard-required Replit-only envs (`PORT`/`BASE_PATH`) must
   have defaults, or a plain off-Replit `vite build` throws before bundling.
-- `@vercel/node` can bundle the `@workspace/*` libs only because their package
-  `exports` point at `.ts` source (same reason the Replit esbuild build works).
+- **Do NOT let `@vercel/node` compile a `.ts` function for this monorepo.** It
+  type-checks with a nodenext config that conflicts with the repo's bundler
+  resolution (`moduleResolution: bundler` + `customConditions: ["workspace"]`,
+  which resolve `@workspace/*` to `.ts` source) → TS2834 (needs `.js`
+  extensions), Express `.use` missing, pino-http "no call signatures", etc.
+  Instead pre-bundle the API with the existing esbuild pipeline
+  (`src/serverless.ts` → `dist/serverless.mjs`) and make the Vercel function a
+  plain `.mjs` re-export so no TS is type-checked by the platform. Native
+  externals (sharp, pdf-parse, @google-cloud) are kept external and traced by nft.
 
 **Cross-platform media caveat (documented, not solved):** with a shared DB, an
 image uploaded on one platform won't load on the other — legacy `/objects/` only
