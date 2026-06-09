@@ -1,6 +1,7 @@
 - [Auth token wiring & persistence](auth-token-wiring.md) — setAuthTokenGetter must be in main.tsx (else 401); tokens MUST be in DB `sessions` table not in-memory Map — autoscale wipes memory → /auth/me 401 → user null → authed UI (avatar) vanishes
 - [Sharp build approval](sharp-build-approval.md) — add `sharp` to onlyBuiltDependencies in pnpm-workspace.yaml before installing it
 - [SEO score scans production](seo-spa-deployment.md) — Replit "Santé SEO" scores the published deployment, not dev; low score after dev SEO work = needs republish
+- [Vercel dual-platform](vercel-dual-platform.md) — runs on Replit AND Vercel via env-based provider selection (storage facade, portable upload, URL resolver, serverless pool/port defaults)
 - [Appointment update emails](appointment-emails.md) — confirm/reschedule/refuse notify the ORIGINAL requester clientEmail (pre-update), never the PATCH payload; SMTP must be set or it silently no-ops
 - [Property geocoding](property-geocoding.md) — property lat/lng auto-derived from address via free Nominatim (OSM) on create/update; best-effort, rate-limited, cached
 - [Testing auth-gated routes](testing-auth-routes.md) — live dev DB diverges from seed creds in replit.md; create a disposable scrypt admin (salt:hexkey) to e2e-test, then clean up

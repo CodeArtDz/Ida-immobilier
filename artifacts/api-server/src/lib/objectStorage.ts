@@ -1,6 +1,7 @@
 import { Storage, File } from "@google-cloud/storage";
 import { Readable } from "stream";
 import { randomUUID } from "crypto";
+import type { Response as ExpressResponse } from "express";
 import {
   ObjectAclPolicy,
   ObjectPermission,
@@ -222,6 +223,50 @@ export class ObjectStorageService {
       objectFile,
       requestedPermission: requestedPermission ?? ObjectPermission.READ,
     });
+  }
+
+  // Converts a stored value into a URL the browser can render directly.
+  // Replit stores normalized `/objects/<id>` paths served via `/api/storage`.
+  // Absolute URLs (e.g. Vercel Blob) and already-prefixed paths pass through.
+  toPublicUrl(stored: string): string {
+    if (/^https?:\/\//.test(stored)) return stored;
+    if (stored.startsWith("/api/storage")) return stored;
+    if (stored.startsWith("/objects/")) return `/api/storage${stored}`;
+    return stored;
+  }
+
+  async serveObject(objectPath: string, res: ExpressResponse): Promise<void> {
+    const objectFile = await this.getObjectEntityFile(objectPath);
+    const response = await this.downloadObject(objectFile);
+    res.status(response.status);
+    response.headers.forEach((value, key) => res.setHeader(key, value));
+    if (response.body) {
+      const nodeStream = Readable.fromWeb(
+        response.body as ReadableStream<Uint8Array>,
+      );
+      nodeStream.pipe(res);
+    } else {
+      res.end();
+    }
+  }
+
+  async servePublicObject(filePath: string, res: ExpressResponse): Promise<void> {
+    const file = await this.searchPublicObject(filePath);
+    if (!file) {
+      res.status(404).json({ error: "File not found" });
+      return;
+    }
+    const response = await this.downloadObject(file);
+    res.status(response.status);
+    response.headers.forEach((value, key) => res.setHeader(key, value));
+    if (response.body) {
+      const nodeStream = Readable.fromWeb(
+        response.body as ReadableStream<Uint8Array>,
+      );
+      nodeStream.pipe(res);
+    } else {
+      res.end();
+    }
   }
 }
 

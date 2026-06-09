@@ -10,7 +10,14 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// On serverless hosts (e.g. Vercel) each function instance gets its own pool, so
+// keep the per-instance pool tiny to avoid exhausting Postgres connections.
+const isServerless = Boolean(process.env.VERCEL);
+
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: isServerless ? 1 : 10,
+});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";

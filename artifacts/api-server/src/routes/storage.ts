@@ -1,23 +1,71 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { Readable } from "stream";
+import multer from "multer";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
-import { ObjectPermission } from "../lib/objectAcl";
+import { getStorageService, getStorageProvider } from "../lib/storage";
 
 const router: IRouter = Router();
-const objectStorageService = new ObjectStorageService();
+const storage = getStorageService();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+});
+
+/**
+ * POST /storage/uploads
+ *
+ * Server-mediated multipart upload. The client sends the file as `file`; the
+ * server stores it via the active storage backend and returns the public URL.
+ * This is the portable upload path that works on both Replit (GCS) and
+ * Vercel (Blob).
+ */
+router.post(
+  "/storage/uploads",
+  upload.single("file"),
+  async (req: Request, res: Response) => {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) {
+        res.status(400).json({ error: "Aucun fichier fourni" });
+        return;
+      }
+      const stored = await storage.uploadBuffer(file.buffer, file.mimetype);
+      const objectPath = storage.toPublicUrl(stored);
+      res.status(201).json({
+        objectPath,
+        uploadURL: "",
+        metadata: {
+          name: file.originalname,
+          size: file.size,
+          contentType: file.mimetype,
+        },
+      });
+    } catch (error) {
+      req.log.error({ err: error }, "Error handling multipart upload");
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  },
+);
 
 /**
  * POST /storage/uploads/request-url
  *
- * Request a presigned URL for file upload.
- * The client sends JSON metadata (name, size, contentType) — NOT the file.
- * Then uploads the file directly to the returned presigned URL.
+ * Presigned URL upload flow (Replit/GCS only). Kept for backward compatibility;
+ * the frontend now uses the portable multipart endpoint above.
  */
 router.post("/storage/uploads/request-url", async (req: Request, res: Response) => {
+  if (getStorageProvider() !== "replit") {
+    res.status(501).json({
+      error:
+        "Presigned uploads are not supported on this storage backend. Use POST /api/storage/uploads.",
+    });
+    return;
+  }
+
   const parsed = RequestUploadUrlBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Missing or invalid required fields" });
@@ -27,6 +75,7 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
   try {
     const { name, size, contentType } = parsed.data;
 
+    const objectStorageService = new ObjectStorageService();
     const uploadURL = await objectStorageService.getObjectEntityUploadURL();
     const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
 
@@ -46,31 +95,13 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
 /**
  * GET /storage/public-objects/*
  *
- * Serve public assets from PUBLIC_OBJECT_SEARCH_PATHS.
- * These are unconditionally public — no authentication or ACL checks.
- * IMPORTANT: Always provide this endpoint when object storage is set up.
+ * Serve public assets. These are unconditionally public — no auth or ACL.
  */
 router.get("/storage/public-objects/*filePath", async (req: Request, res: Response) => {
   try {
     const raw = req.params.filePath;
     const filePath = Array.isArray(raw) ? raw.join("/") : raw;
-    const file = await objectStorageService.searchPublicObject(filePath);
-    if (!file) {
-      res.status(404).json({ error: "File not found" });
-      return;
-    }
-
-    const response = await objectStorageService.downloadObject(file);
-
-    res.status(response.status);
-    response.headers.forEach((value, key) => res.setHeader(key, value));
-
-    if (response.body) {
-      const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
-      nodeStream.pipe(res);
-    } else {
-      res.end();
-    }
+    await storage.servePublicObject(filePath, res);
   } catch (error) {
     req.log.error({ err: error }, "Error serving public object");
     res.status(500).json({ error: "Failed to serve public object" });
@@ -80,43 +111,14 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
 /**
  * GET /storage/objects/*
  *
- * Serve object entities from PRIVATE_OBJECT_DIR.
- * These are served from a separate path from /public-objects and can optionally
- * be protected with authentication or ACL checks based on the use case.
+ * Serve object entities (uploaded files).
  */
 router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   try {
     const raw = req.params.path;
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
     const objectPath = `/objects/${wildcardPath}`;
-    const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
-
-    // --- Protected route example (uncomment when using replit-auth) ---
-    // if (!req.isAuthenticated()) {
-    //   res.status(401).json({ error: "Unauthorized" });
-    //   return;
-    // }
-    // const canAccess = await objectStorageService.canAccessObjectEntity({
-    //   userId: req.user.id,
-    //   objectFile,
-    //   requestedPermission: ObjectPermission.READ,
-    // });
-    // if (!canAccess) {
-    //   res.status(403).json({ error: "Forbidden" });
-    //   return;
-    // }
-
-    const response = await objectStorageService.downloadObject(objectFile);
-
-    res.status(response.status);
-    response.headers.forEach((value, key) => res.setHeader(key, value));
-
-    if (response.body) {
-      const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
-      nodeStream.pipe(res);
-    } else {
-      res.end();
-    }
+    await storage.serveObject(objectPath, res);
   } catch (error) {
     if (error instanceof ObjectNotFoundError) {
       req.log.warn({ err: error }, "Object not found");

@@ -1,0 +1,6 @@
+.local
+.agents
+artifacts/mockup-sandbox
+**/*.tsbuildinfo
+artifacts/api-server/dist
+artifacts/api-server/uploads

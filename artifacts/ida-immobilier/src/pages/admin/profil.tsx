@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CheckCircle2, Loader2, User, Lock, Camera, Trash2, Shield } from "lucide-react";
 import { useUpload } from "@workspace/object-storage-web";
+import { resolveStorageUrl } from "@/lib/storage-url";
 
 const ROLE_LABELS: Record<string, string> = {
   superadmin: "Super Administrateur",
@@ -16,8 +17,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function getAvatarSrc(avatarUrl: string | null | undefined): string | null {
-  if (!avatarUrl) return null;
-  return "/api/storage" + avatarUrl;
+  return resolveStorageUrl(avatarUrl);
 }
 
 export default function AdminProfil() {
@@ -56,8 +56,8 @@ export default function AdminProfil() {
       setAvatarError("Seules les images sont acceptées (JPG, PNG, WEBP).");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarError("L'image ne doit pas dépasser 5 Mo.");
+    if (file.size > 4 * 1024 * 1024) {
+      setAvatarError("L'image ne doit pas dépasser 4 Mo.");
       return;
     }
     setAvatarError("");
@@ -230,7 +230,7 @@ export default function AdminProfil() {
                   Supprimer
                 </Button>
               )}
-              <p className="text-xs text-muted-foreground">JPG, PNG ou WEBP — 5 Mo max.</p>
+              <p className="text-xs text-muted-foreground">JPG, PNG ou WEBP — 4 Mo max.</p>
               {avatarError && <p className="text-sm text-destructive">{avatarError}</p>}
             </div>
           </div>

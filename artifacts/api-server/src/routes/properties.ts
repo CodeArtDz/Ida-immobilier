@@ -14,12 +14,12 @@ import { requireAuth, optionalAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
 import multer from "multer";
 import { applyWatermarkBuffer } from "../lib/watermark";
-import { ObjectStorageService } from "../lib/objectStorage";
+import { getStorageService } from "../lib/storage";
 import { geocodeAddress, hasValidCoords } from "../lib/geocode";
 import { PDFParse } from "pdf-parse";
 import { parseFiche } from "../lib/fiche-parser";
 
-const objectStorageService = new ObjectStorageService();
+const objectStorageService = getStorageService();
 
 // Media is buffered in memory (not written to disk) so it can be watermarked and
 // pushed to object storage — the production filesystem is ephemeral and loses
@@ -596,14 +596,14 @@ router.post("/properties/:id/media/upload", requireAuth, upload.single("file"), 
     // Persist to object storage (durable) rather than local disk (ephemeral in
     // production). The returned `/objects/...` path is served via /api/storage.
     const objectPath = await objectStorageService.uploadBuffer(file.buffer, file.mimetype);
-    const originalUrl = `/api/storage${objectPath}`;
+    const originalUrl = objectStorageService.toPublicUrl(objectPath);
     let watermarkedUrl: string | null = null;
 
     if (isImage) {
       try {
         const wmBuffer = await applyWatermarkBuffer(file.buffer);
         const wmPath = await objectStorageService.uploadBuffer(wmBuffer, "image/jpeg");
-        watermarkedUrl = `/api/storage${wmPath}`;
+        watermarkedUrl = objectStorageService.toPublicUrl(wmPath);
       } catch (wmErr) {
         logger.warn({ wmErr }, "Watermark failed, using original");
         watermarkedUrl = originalUrl;

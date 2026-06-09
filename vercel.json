@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm run vercel-build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "artifacts/ida-immobilier/dist/public",
+  "framework": null,
+  "functions": {
+    "api/[...path].ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -5,7 +5,11 @@ import path from "path";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
-const UPLOADS_DIR = "/home/runner/workspace/artifacts/api-server/uploads";
+// Legacy local upload dir (uploads now go to object storage). Kept portable and
+// optional: on serverless hosts (Vercel) the dir may not exist, in which case
+// express.static simply 404s and falls through.
+const UPLOADS_DIR =
+  process.env.UPLOADS_DIR || path.join(process.cwd(), "uploads");
 
 const app: Express = express();
 

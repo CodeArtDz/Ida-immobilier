@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
+import { resolveStorageUrl } from "@/lib/storage-url";
 import {
   useGetProperty,
   useGetSimilarProperties,
@@ -879,7 +880,7 @@ export default function Annonce() {
                   <div className="w-16 h-16 rounded-full bg-primary-foreground/20 overflow-hidden shrink-0">
                     {property.agentAvatarUrl ? (
                       <img
-                        src={`/api/storage${property.agentAvatarUrl}`}
+                        src={resolveStorageUrl(property.agentAvatarUrl) ?? ""}
                         alt={property.agentName || ""}
                         className="w-full h-full object-cover"
                       />

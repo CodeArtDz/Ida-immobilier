@@ -66,6 +66,24 @@ A production-ready French luxury real estate platform for I.D.A Immobilier (Mari
 | Client 1   | client1@example.fr                 | client123      |
 | Client 2   | client2@example.fr                 | client123      |
 
+## Vercel deployment (dual-platform)
+
+The app runs on both Replit and Vercel. Platform-specific behavior is selected at runtime by environment variables — no code branches per host.
+
+- **Storage**: A facade (`artifacts/api-server/src/lib/storage.ts`) picks the backend. `BLOB_READ_WRITE_TOKEN` present (or `STORAGE_PROVIDER=vercel`) → Vercel Blob; otherwise Replit GCS. Both implement the same `StorageService` interface (`uploadBuffer`, `toPublicUrl`, `serveObject`, `servePublicObject`).
+- **Uploads**: All client uploads go through the portable server-multipart endpoint `POST /api/storage/uploads` (multer memory → active backend → public URL). The legacy presigned `request-url` route is kept Replit-only.
+- **URL resolution**: `artifacts/ida-immobilier/src/lib/storage-url.ts` `resolveStorageUrl()` renders stored values across backends — absolute Blob URLs pass through, legacy `/objects/...` get the `/api/storage` prefix.
+- **Serverless wiring**: `vercel.json` (build via `pnpm run vercel-build`, output `artifacts/ida-immobilier/dist/public`, SPA rewrite excluding `/api`), `api/[...path].ts` (catch-all that exports the Express app; `@vercel/node` bundles the TS-source workspace libs), root `vercel-build` script. DB pool shrinks to `max: 1` when `process.env.VERCEL` is set.
+
+### Vercel env vars
+
+`DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `SESSION_SECRET`, `RESEND_API_KEY`. Optionally `STORAGE_PROVIDER` to force a backend.
+
+### Known limitations
+
+- **Body size**: Vercel serverless caps request bodies at ~4.5 MB. Avatar uploads are limited to 4 MB client-side; property media larger than ~4.5 MB will fail on Vercel (works on Replit).
+- **Cross-platform media**: With a shared DB, images uploaded on one platform won't load on the other (legacy `/objects/...` paths only resolve on Replit; Blob URLs only exist after a Vercel upload).
+
 ## User preferences
 
 _Populate as you build — explicit user instructions worth remembering across sessions._

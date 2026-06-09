@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth";
+import { resolveStorageUrl } from "@/lib/storage-url";
 import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
@@ -81,7 +82,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center px-4 py-3 mb-2 rounded-md hover:bg-sidebar-accent/50 cursor-pointer transition-colors">
               {(user as any)?.avatarUrl ? (
                 <img
-                  src={`/api/storage${(user as any).avatarUrl}`}
+                  src={resolveStorageUrl((user as any).avatarUrl) ?? ""}
                   alt="Avatar"
                   className="w-8 h-8 rounded-full object-cover border border-sidebar-border shrink-0"
                 />
