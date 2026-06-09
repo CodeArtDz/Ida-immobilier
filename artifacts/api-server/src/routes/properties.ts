@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
 import {
   propertiesTable,
@@ -17,6 +17,8 @@ import path from "path";
 import { promises as fs } from "fs";
 import { applyWatermark } from "../lib/watermark";
 import { geocodeAddress, hasValidCoords } from "../lib/geocode";
+import { PDFParse } from "pdf-parse";
+import { parseFiche } from "../lib/fiche-parser";
 
 const UPLOADS_DIR = "/home/runner/workspace/artifacts/api-server/uploads";
 
@@ -40,6 +42,44 @@ const upload = multer({
     allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Type de fichier non autorisé"));
   },
 });
+
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    file.mimetype === "application/pdf"
+      ? cb(null, true)
+      : cb(new Error("Seuls les fichiers PDF sont acceptés"));
+  },
+});
+
+// Runs the PDF multer middleware and maps upload errors to JSON responses.
+// Without this, multer errors bubble to Express's default handler and surface
+// as non-JSON 500s the frontend can't display.
+const pdfUploadSingle = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  pdfUpload.single("file")(req, res, (err: unknown) => {
+    if (err instanceof multer.MulterError) {
+      const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+      const message =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "Le fichier PDF dépasse la taille maximale de 20 Mo."
+          : "Fichier invalide.";
+      res.status(status).json({ error: message });
+      return;
+    }
+    if (err) {
+      res.status(400).json({
+        error: err instanceof Error ? err.message : "Fichier invalide.",
+      });
+      return;
+    }
+    next();
+  });
+};
 
 const router = Router();
 
@@ -364,6 +404,44 @@ router.post("/properties", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
+// POST /properties/import-pdf — extract field values from a "fiche privée" PDF
+// to prefill the new-property form. Deterministic text parsing only (no AI).
+router.post(
+  "/properties/import-pdf",
+  requireAuth,
+  requireRole("superadmin", "admin", "agency_manager", "agent"),
+  pdfUploadSingle,
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "Aucun fichier PDF fourni" });
+    }
+    try {
+      const parser = new PDFParse({ data: req.file.buffer });
+      let text: string;
+      try {
+        const result = await parser.getText();
+        text = result.text;
+      } finally {
+        await parser.destroy();
+      }
+
+      if (!text || text.trim().length < 20) {
+        return res.status(422).json({
+          error:
+            "Le PDF ne contient pas de texte exploitable. S'il s'agit d'un document scanné (image), saisissez les informations manuellement.",
+        });
+      }
+
+      const data = parseFiche(text);
+      req.log.info({ fieldsFound: Object.keys(data).length }, "Fiche PDF parsed");
+      return res.json({ data, fieldsFound: Object.keys(data).length });
+    } catch (err) {
+      req.log.error({ err }, "Failed to parse fiche PDF");
+      return res.status(500).json({ error: "Impossible d'analyser le PDF" });
+    }
+  },
+);
 
 // PATCH /properties/:id
 router.patch("/properties/:id", requireAuth, async (req, res) => {

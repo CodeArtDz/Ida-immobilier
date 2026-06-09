@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useCreateProperty } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import PropertyMediaUploader from "@/components/property-media-uploader";
-import { CheckCircle2, ImagePlus } from "lucide-react";
+import { CheckCircle2, ImagePlus, FileText, Loader2 } from "lucide-react";
 
 const PROPERTY_TYPES = [
   { value: "apartment", label: "Appartement" },
@@ -58,6 +58,8 @@ const EQUIPMENT = [
 ] as const;
 
 type EquipmentKey = typeof EQUIPMENT[number]["key"];
+
+const EQUIPMENT_KEYS = new Set<string>(EQUIPMENT.map((e) => e.key));
 
 const EMPTY_FORM = {
   title: "",
@@ -124,8 +126,71 @@ export default function NouveauBien() {
     hasDisabledAccess: false,
   });
 
+  const [importing, setImporting] = useState(false);
+  const [pdfDragOver, setPdfDragOver] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
   const set = (field: keyof FormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+  const applyFiche = (data: Record<string, string | number | boolean>) => {
+    setFormData((prev) => {
+      const next = { ...prev };
+      for (const [k, v] of Object.entries(data)) {
+        if (EQUIPMENT_KEYS.has(k)) continue;
+        if (k in next) (next as Record<string, string>)[k] = String(v);
+      }
+      return next;
+    });
+    setEquipment((prev) => {
+      const next = { ...prev };
+      for (const [k, v] of Object.entries(data)) {
+        if (EQUIPMENT_KEYS.has(k) && typeof v === "boolean") {
+          next[k as EquipmentKey] = v;
+        }
+      }
+      return next;
+    });
+  };
+
+  const handlePdfImport = async (file: File) => {
+    if (file.type !== "application/pdf") {
+      toast({
+        title: "Format non supporté",
+        description: "Veuillez sélectionner un fichier PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setImporting(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/properties/import-pdf", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` },
+        body,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json?.error || "Échec de l'analyse du PDF.");
+      }
+      applyFiche(json.data ?? {});
+      toast({
+        title: "Fiche analysée",
+        description: `${json.fieldsFound ?? 0} champ(s) pré-rempli(s). Vérifiez les informations avant d'enregistrer.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: err instanceof Error ? err.message : "Impossible d'analyser le PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
+    }
+  };
 
   const toggleEquip = (key: EquipmentKey) =>
     setEquipment((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -246,6 +311,63 @@ export default function NouveauBien() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+
+        {/* ── Import fiche PDF ── */}
+        <section
+          className={`p-6 rounded-xl border border-dashed transition-colors ${
+            pdfDragOver ? "border-primary bg-primary/10" : "border-primary/30 bg-primary/5"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setPdfDragOver(true);
+          }}
+          onDragLeave={() => setPdfDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setPdfDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) handlePdfImport(file);
+          }}
+        >
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handlePdfImport(file);
+            }}
+          />
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto sm:mx-0">
+              {importing ? (
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              ) : (
+                <FileText className="w-6 h-6 text-primary" />
+              )}
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="font-serif text-lg font-bold text-primary">
+                Importer une fiche privée (PDF)
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Glissez un PDF ici ou parcourez pour pré-remplir automatiquement le
+                formulaire. Les informations extraites restent modifiables avant
+                l'enregistrement.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={importing}
+              onClick={() => pdfInputRef.current?.click()}
+              className="border-primary/40 text-primary hover:bg-primary/10 shrink-0"
+            >
+              {importing ? "Analyse en cours..." : "Choisir un PDF"}
+            </Button>
+          </div>
+        </section>
 
         {/* ── Informations principales ── */}
         <section className="bg-card border border-border p-8 rounded-xl space-y-4">
