@@ -1,13 +1,12 @@
 import sharp from "sharp";
-import path from "path";
-import { promises as fs } from "fs";
 
 const LOGO_PATH = "/home/runner/workspace/attached_assets/full_logo3__1780868246992.png";
 
-export async function applyWatermark(inputPath: string, outputPath: string): Promise<void> {
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-
-  const image = sharp(inputPath);
+// Composites the agency logo onto an image and returns the watermarked JPEG as a
+// buffer. Works entirely in memory so media can be uploaded to object storage
+// (the production filesystem is ephemeral and loses disk-written files).
+export async function applyWatermarkBuffer(inputBuffer: Buffer): Promise<Buffer> {
+  const image = sharp(inputBuffer);
   const { width = 800, height = 600 } = await image.metadata();
 
   const logoWidth = Math.max(80, Math.round(Math.min(width, height) * 0.20));
@@ -25,10 +24,8 @@ export async function applyWatermark(inputPath: string, outputPath: string): Pro
   const top = Math.max(0, height - lh - padding);
   const left = Math.max(0, width - lw - padding);
 
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-
-  await image
+  return image
     .composite([{ input: logoBuffer, top, left, blend: "over" }])
     .jpeg({ quality: 90 })
-    .toFile(outputPath);
+    .toBuffer();
 }

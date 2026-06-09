@@ -128,6 +128,25 @@ export class ObjectStorageService {
     });
   }
 
+  // Uploads raw bytes (already in memory) to the private object dir and returns
+  // the normalized `/objects/<id>` path. Used for server-side uploads such as
+  // watermarked property photos, where the server holds the file bytes.
+  async uploadBuffer(buffer: Buffer, contentType: string): Promise<string> {
+    const privateObjectDir = this.getPrivateObjectDir();
+    const objectId = randomUUID();
+    const fullPath = `${privateObjectDir}/uploads/${objectId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+
+    await objectStorageClient
+      .bucket(bucketName)
+      .file(objectName)
+      .save(buffer, { contentType, resumable: false });
+
+    return this.normalizeObjectEntityPath(
+      `https://storage.googleapis.com/${bucketName}/${objectName}`,
+    );
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();

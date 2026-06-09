@@ -102,8 +102,15 @@ function findLetter(text: string, labels: string[]): string | undefined {
 const AREA_UNIT = "m\\s*(?:²|2|\\^2)";
 
 export function parseFiche(rawText: string): FicheData {
-  // Normalise exotic whitespace so label regexes behave predictably.
-  const text = rawText.replace(/[\u00A0\u202F]/g, " ").replace(/[ \t]+/g, " ");
+  // Strip NUL and other C0 control bytes (kept: tab, newline, carriage return).
+  // Some PDF fonts emit ligatures (e.g. "ff") as \u0000, and PostgreSQL text
+  // columns reject NUL bytes ("invalid byte sequence for encoding UTF8: 0x00"),
+  // which would crash the property insert. Then normalise exotic whitespace so
+  // label regexes behave predictably.
+  const text = rawText
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+    .replace(/[\u00A0\u202F]/g, " ")
+    .replace(/[ \t]+/g, " ");
   const lower = text.toLowerCase();
   const data: FicheData = {};
 

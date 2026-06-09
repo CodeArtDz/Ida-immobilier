@@ -5,5 +5,6 @@
 - [Property geocoding](property-geocoding.md) — property lat/lng auto-derived from address via free Nominatim (OSM) on create/update; best-effort, rate-limited, cached
 - [Testing auth-gated routes](testing-auth-routes.md) — live dev DB diverges from seed creds in replit.md; create a disposable scrypt admin (salt:hexkey) to e2e-test, then clean up
 - [French legal pages](legal-pages.md) — never fabricate FR agency legal identifiers (SIRET, RCS, carte pro, host phone…); leave them as TODO placeholders for the owner
-- [Property media watermarking & main image](media-watermark.md) — upload auto-watermarks (sharp); public displays must render `watermarkedUrl || url`; mainImageUrl = lowest-order type=photo (no isMain flag), reorder atomically
+- [Property media watermarking & main image](media-watermark.md) — uploads go to Object Storage (memoryStorage→uploadBuffer→/api/storage/objects/…), NOT local disk (ephemeral in prod); displays render `watermarkedUrl || url`; mainImageUrl = lowest-order type=photo, reorder atomically
+- [DB gotchas](ida-db-gotchas.md) — numeric fields return strings (parseFloat before JSON); NUL bytes (0x00) from PDF/pasted text crash text inserts — strip via parseFiche + stripNullBytes on write
 - [Estimation & notification authz](estimation-notif-authz.md) — estimation admin routes need requireRole guard; notification read must scope by userId (IDOR); new estimations fan out notifications to active staff

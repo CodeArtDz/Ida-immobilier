@@ -13,35 +13,44 @@ import { eq, and, desc, sql, ilike, gte, lte, count, inArray } from "drizzle-orm
 import { requireAuth, optionalAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
 import multer from "multer";
-import path from "path";
-import { promises as fs } from "fs";
-import { applyWatermark } from "../lib/watermark";
+import { applyWatermarkBuffer } from "../lib/watermark";
+import { ObjectStorageService } from "../lib/objectStorage";
 import { geocodeAddress, hasValidCoords } from "../lib/geocode";
 import { PDFParse } from "pdf-parse";
 import { parseFiche } from "../lib/fiche-parser";
 
-const UPLOADS_DIR = "/home/runner/workspace/artifacts/api-server/uploads";
+const objectStorageService = new ObjectStorageService();
 
-const storage = multer.diskStorage({
-  destination: async (_req, _file, cb) => {
-    const dir = path.join(UPLOADS_DIR, "original");
-    await fs.mkdir(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
-});
-
+// Media is buffered in memory (not written to disk) so it can be watermarked and
+// pushed to object storage — the production filesystem is ephemeral and loses
+// any disk-written uploads on restart/scale.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime"];
     allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Type de fichier non autorisé"));
   },
 });
+
+// PostgreSQL text columns reject NUL bytes; strip them (and they can arrive via
+// pasted text or PDF-extracted content) from all string values before insert.
+function stripNullBytes<T>(value: T): T {
+  if (typeof value === "string") {
+    return value.replace(/\u0000/g, "") as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => stripNullBytes(v)) as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[k] = stripNullBytes(v);
+    }
+    return out as T;
+  }
+  return value;
+}
 
 const pdfUpload = multer({
   storage: multer.memoryStorage(),
@@ -361,7 +370,7 @@ router.get("/properties/:id", optionalAuth, async (req, res) => {
 router.post("/properties", requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
-    const data = req.body;
+    const data = stripNullBytes(req.body);
 
     // Auto-geocode the address into map coordinates when none were provided.
     let { latitude, longitude } = data;
@@ -447,7 +456,7 @@ router.post(
 router.patch("/properties/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id as string);
-    const data = { ...req.body };
+    const data = stripNullBytes({ ...req.body });
 
     // Re-geocode when address fields change but valid coordinates weren't sent.
     const addressChanged =
@@ -583,15 +592,18 @@ router.post("/properties/:id/media/upload", requireAuth, upload.single("file"), 
 
     const propertyId = parseInt(req.params.id as string);
     const isImage = file.mimetype.startsWith("image/");
-    const originalUrl = `/api/uploads/original/${file.filename}`;
+
+    // Persist to object storage (durable) rather than local disk (ephemeral in
+    // production). The returned `/objects/...` path is served via /api/storage.
+    const objectPath = await objectStorageService.uploadBuffer(file.buffer, file.mimetype);
+    const originalUrl = `/api/storage${objectPath}`;
     let watermarkedUrl: string | null = null;
 
     if (isImage) {
-      const wmFilename = `wm-${file.filename.replace(/\.[^.]+$/, "")}.jpg`;
-      const wmPath = path.join(UPLOADS_DIR, "watermarked", wmFilename);
       try {
-        await applyWatermark(file.path, wmPath);
-        watermarkedUrl = `/api/uploads/watermarked/${wmFilename}`;
+        const wmBuffer = await applyWatermarkBuffer(file.buffer);
+        const wmPath = await objectStorageService.uploadBuffer(wmBuffer, "image/jpeg");
+        watermarkedUrl = `/api/storage${wmPath}`;
       } catch (wmErr) {
         logger.warn({ wmErr }, "Watermark failed, using original");
         watermarkedUrl = originalUrl;
