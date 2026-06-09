@@ -879,7 +879,7 @@ export default function Annonce() {
                   <div className="w-16 h-16 rounded-full bg-primary-foreground/20 overflow-hidden shrink-0">
                     {property.agentAvatarUrl ? (
                       <img
-                        src={property.agentAvatarUrl}
+                        src={`/api/storage${property.agentAvatarUrl}`}
                         alt={property.agentName || ""}
                         className="w-full h-full object-cover"
                       />
