@@ -1,13 +1,11 @@
-import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Home as HomeIcon, KeyRound, Calculator, Handshake, MapPin, ArrowRight, Play } from "lucide-react";
+import { Search, Home as HomeIcon, KeyRound, Calculator, Handshake, MapPin, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useListFeaturedProperties } from "@workspace/api-client-react";
 import { PropertyCard } from "@/components/property-card";
 import heroBg from "@/assets/images/hero-bg.png";
-import heroBgWebp from "@/assets/images/hero-bg.webp";
 import estimationVilla from "@/assets/images/estimation-villa.png";
 import heroVideo from "@assets/18682412-uhd_3840_2160_25fps_1780936165688.mp4";
 import { useSeo } from "@/hooks/use-seo";
@@ -61,14 +59,6 @@ const CITIES = [
 
 export default function Home() {
   const { data: featuredProperties, isLoading } = useListFeaturedProperties();
-  const [videoPlaying, setVideoPlaying] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoPlaying && videoRef.current) {
-      videoRef.current.play().catch(() => {});
-    }
-  }, [videoPlaying]);
 
   useSeo({
     title: "Agence Immobilière de Prestige en Provence",
@@ -91,29 +81,17 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-[85vh] min-h-[560px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          {videoPlaying ? (
-            <video
-              ref={videoRef}
-              muted
-              loop
-              playsInline
-              preload="auto"
-              className="w-full h-full object-cover"
-            >
-              <source src={heroVideo} type="video/mp4" />
-            </video>
-          ) : (
-            <picture>
-              <source srcSet={heroBgWebp} type="image/webp" />
-              <img
-                src={heroBg}
-                alt="Vue panoramique de Provence — Côte d'Azur"
-                fetchPriority="high"
-                decoding="async"
-                className="w-full h-full object-cover"
-              />
-            </picture>
-          )}
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster={heroBg}
+            className="w-full h-full object-cover"
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-primary/50 mix-blend-multiply"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-primary/20"></div>
         </div>
@@ -139,27 +117,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="max-w-3xl mx-auto bg-card rounded-lg p-2 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0"
-          >
-            <div className="flex-1 px-4 sm:border-r border-border">
-              <Input
-                placeholder="Ville, code postal ou référence..."
-                className="border-0 shadow-none focus-visible:ring-0 px-0 h-12 text-foreground"
-              />
-            </div>
-            <div className="sm:px-2">
-              <Button className="w-full sm:w-auto h-12 px-8 bg-accent text-accent-foreground hover:bg-accent/90 rounded-md font-serif text-lg">
-                <Search className="mr-2 h-5 w-5" />
-                Rechercher
-              </Button>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.35 }}
-            className="mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4"
+            className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4"
           >
             <Button
               asChild
@@ -186,25 +144,25 @@ export default function Home() {
             </Button>
           </motion.div>
 
-          {!videoPlaying && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.8 }}
-              className="mt-6"
-            >
-              <button
-                onClick={() => setVideoPlaying(true)}
-                className="inline-flex items-center gap-2 text-primary-foreground/60 hover:text-primary-foreground text-xs uppercase tracking-widest transition-colors"
-                aria-label="Voir la vidéo de présentation"
-              >
-                <span className="flex items-center justify-center w-7 h-7 rounded-full border border-primary-foreground/40 hover:border-primary-foreground transition-colors">
-                  <Play className="h-3 w-3 fill-current ml-0.5" />
-                </span>
-                Visionner la vidéo
-              </button>
-            </motion.div>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.35 }}
+            className="mt-8 max-w-3xl mx-auto bg-card rounded-lg p-2 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0"
+          >
+            <div className="flex-1 px-4 sm:border-r border-border">
+              <Input
+                placeholder="Ville, code postal ou référence..."
+                className="border-0 shadow-none focus-visible:ring-0 px-0 h-12 text-foreground"
+              />
+            </div>
+            <div className="sm:px-2">
+              <Button className="w-full sm:w-auto h-12 px-8 bg-accent text-accent-foreground hover:bg-accent/90 rounded-md font-serif text-lg">
+                <Search className="mr-2 h-5 w-5" />
+                Rechercher
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </section>
 
