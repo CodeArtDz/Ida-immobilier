@@ -78,7 +78,9 @@ The app runs on both Replit and Vercel. Platform-specific behavior is selected a
 
 ### Vercel env vars
 
-`DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `SESSION_SECRET`, `RESEND_API_KEY`. Optionally `STORAGE_PROVIDER` to force a backend.
+Required: `DATABASE_URL`. For Vercel Blob storage: `BLOB_READ_WRITE_TOKEN` (auto-added by Vercel's Storage tab). Optional overrides (all have defaults): `STORAGE_PROVIDER`, `EMAIL_FROM`, `ADMIN_EMAIL`, `SITE_DOMAIN`, `LOG_LEVEL`. `NODE_ENV`/`VERCEL` are set by Vercel. The Replit-only vars (`PORT`, `BASE_PATH`, `PRIVATE_OBJECT_DIR`, `PUBLIC_OBJECT_SEARCH_PATHS`, `UPLOADS_DIR`, `REPL_ID`) are not used on Vercel.
+
+**Email caveat**: the mailer uses the Replit Connectors SDK (`@replit/connectors-sdk`) for Resend, which only works on Replit. On Vercel, outbound email silently no-ops until the mailer is changed to call the Resend API directly with a `RESEND_API_KEY` (gated on `process.env.VERCEL`). No `SESSION_SECRET` is read — auth tokens are stored in an in-memory Map.
 
 ### Known limitations
 
