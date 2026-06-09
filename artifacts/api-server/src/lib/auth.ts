@@ -1,28 +1,28 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
+import { usersTable, sessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
-// Simple token store in memory (in production use Redis/JWT)
-const tokenStore = new Map<string, number>(); // token -> userId
+// Token store is persisted in the database (sessions table) so tokens survive
+// server restarts and work across multiple instances on autoscale deployments.
 
 export function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
-export function storeToken(token: string, userId: number): void {
-  tokenStore.set(token, userId);
+export async function storeToken(token: string, userId: number): Promise<void> {
+  await db.insert(sessionsTable).values({ token, userId });
 }
 
-export function revokeToken(token: string): void {
-  tokenStore.delete(token);
+export async function revokeToken(token: string): Promise<void> {
+  await db.delete(sessionsTable).where(eq(sessionsTable.token, token));
 }
 
 export async function getUserFromToken(token: string) {
-  const userId = tokenStore.get(token);
-  if (!userId) return null;
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  const [session] = await db.select().from(sessionsTable).where(eq(sessionsTable.token, token));
+  if (!session) return null;
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
   return user || null;
 }
 

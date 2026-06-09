@@ -47,7 +47,7 @@ router.post("/auth/login", async (req, res) => {
       return;
     }
     const token = generateToken();
-    storeToken(token, user.id);
+    await storeToken(token, user.id);
     res.json({
       user: {
         id: user.id,
@@ -92,7 +92,7 @@ router.post("/auth/register", async (req, res) => {
       role: "client",
     }).returning();
     const token = generateToken();
-    storeToken(token, user.id);
+    await storeToken(token, user.id);
     res.status(201).json({
       user: {
         id: user.id,
@@ -118,7 +118,7 @@ router.post("/auth/register", async (req, res) => {
 router.post("/auth/logout", requireAuth, async (req, res) => {
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith("Bearer ")) {
-    revokeToken(authHeader.slice(7));
+    await revokeToken(authHeader.slice(7));
   }
   res.json({ status: "ok" });
 });

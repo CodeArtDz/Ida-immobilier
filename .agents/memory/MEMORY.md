@@ -1,4 +1,4 @@
-- [Auth token wiring](auth-token-wiring.md) — setAuthTokenGetter must be called in main.tsx for token-based auth; without it all API calls return 401
+- [Auth token wiring & persistence](auth-token-wiring.md) — setAuthTokenGetter must be in main.tsx (else 401); tokens MUST be in DB `sessions` table not in-memory Map — autoscale wipes memory → /auth/me 401 → user null → authed UI (avatar) vanishes
 - [Sharp build approval](sharp-build-approval.md) — add `sharp` to onlyBuiltDependencies in pnpm-workspace.yaml before installing it
 - [SEO score scans production](seo-spa-deployment.md) — Replit "Santé SEO" scores the published deployment, not dev; low score after dev SEO work = needs republish
 - [Appointment update emails](appointment-emails.md) — confirm/reschedule/refuse notify the ORIGINAL requester clientEmail (pre-update), never the PATCH payload; SMTP must be set or it silently no-ops
