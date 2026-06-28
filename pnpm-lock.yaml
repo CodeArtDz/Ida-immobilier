@@ -99,6 +99,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/seo':
+        specifier: workspace:*
+        version: link:../../lib/seo
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -302,6 +305,9 @@ importers:
       '@workspace/object-storage-web':
         specifier: workspace:*
         version: link:../../lib/object-storage-web
+      '@workspace/seo':
+        specifier: workspace:*
+        version: link:../../lib/seo
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -620,11 +626,16 @@ importers:
         specifier: 'catalog:'
         version: 19.2.14
 
+  lib/seo: {}
+
   scripts:
     dependencies:
       '@workspace/db':
         specifier: workspace:*
         version: link:../lib/db
+      '@workspace/seo':
+        specifier: workspace:*
+        version: link:../lib/seo
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@types/pg@8.20.0)(pg@8.20.0)

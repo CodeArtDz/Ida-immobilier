@@ -520,6 +520,156 @@ async function main(): Promise<void> {
 
     console.log(`[prerender] Property pages done (${propertyCount}).`);
 
+    // ── Programmatic SEO pages (cities, type×city, agence, estimation, agents) ──
+    const { citiesTable, usersTable } = await import("@workspace/db");
+    const { PROPERTY_TYPE_FR, buildAgentSlug } = await import("@workspace/seo");
+
+    const SEO_TYPES = ["apartment", "house", "villa", "land"] as const;
+    const TYPE_PLURAL: Record<string, string> = {
+      apartment: "Appartements",
+      house: "Maisons",
+      villa: "Villas",
+      land: "Terrains",
+    };
+    const ROLE_LABEL: Record<string, string> = {
+      agent: "Conseiller immobilier",
+      agency_manager: "Directeur d'agence",
+      admin: "Responsable",
+      superadmin: "Direction",
+    };
+    const SUFFIX = " | I.D.A Immobilier";
+
+    const seoHead = (
+      routePath: string,
+      title: string,
+      description: string,
+      canonical: string,
+      crumbs: Array<{ name: string; url: string }>,
+      ogImage = DEFAULT_OG_IMAGE,
+    ): void => {
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: crumbs.map((c, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: c.name,
+          item: c.url,
+        })),
+      };
+      const html = rewriteHead(template, {
+        title,
+        description,
+        canonical,
+        robots: ROBOTS_INDEX,
+        ogTitle: title,
+        ogDescription: description,
+        ogUrl: canonical,
+        ogType: "website",
+        ogImage,
+        twitterTitle: title,
+        twitterDescription: description,
+        twitterImage: ogImage,
+        jsonLd,
+      });
+      writeHtml(distPublic, routePath, html);
+    };
+
+    const home = { name: "Accueil", url: `${BASE_URL}/` };
+    const cities = await db.select().from(citiesTable);
+    let seoCount = 0;
+    for (const c of cities) {
+      const name = c.name;
+
+      // City landing
+      const cityUrl = `${BASE_URL}/immobilier-${c.slug}`;
+      seoHead(
+        `/immobilier-${c.slug}`,
+        `${c.metaTitle ?? `Immobilier à ${name} — Achat, Vente, Location`}${SUFFIX}`,
+        c.metaDescription ??
+          `Découvrez tous les biens immobiliers à ${name} avec I.D.A Immobilier : appartements, maisons et villas à vendre ou à louer. Estimation gratuite et accompagnement sur-mesure.`,
+        cityUrl,
+        [home, { name: `Immobilier à ${name}`, url: cityUrl }],
+        c.heroImageUrl ?? DEFAULT_OG_IMAGE,
+      );
+      seoCount++;
+
+      // Agence
+      const agenceUrl = `${BASE_URL}/agence-immobiliere-${c.slug}`;
+      seoHead(
+        `/agence-immobiliere-${c.slug}`,
+        `Agence immobilière à ${name} — I.D.A Immobilier${SUFFIX}`,
+        `I.D.A Immobilier, votre agence immobilière à ${name} et dans toute la Provence. Achat, vente, location et estimation gratuite. Contactez nos conseillers experts.`,
+        agenceUrl,
+        [home, { name: `Immobilier à ${name}`, url: cityUrl }, { name: "Notre agence", url: agenceUrl }],
+      );
+      seoCount++;
+
+      // Estimation
+      const estimUrl = `${BASE_URL}/estimation-immobiliere-${c.slug}`;
+      seoHead(
+        `/estimation-immobiliere-${c.slug}`,
+        `Estimation immobilière gratuite à ${name}${SUFFIX}`,
+        `Estimez gratuitement votre bien immobilier à ${name} avec I.D.A Immobilier. Évaluation fiable basée sur le marché local, sans engagement. Vendez au meilleur prix.`,
+        estimUrl,
+        [home, { name: `Immobilier à ${name}`, url: cityUrl }, { name: "Estimation", url: estimUrl }],
+      );
+      seoCount++;
+
+      // Type × city
+      for (const t of SEO_TYPES) {
+        const plural = TYPE_PLURAL[t];
+        const pluralLc = plural.toLowerCase();
+        const typeUrl = `${BASE_URL}/${PROPERTY_TYPE_FR[t]}-a-vendre-${c.slug}`;
+        seoHead(
+          `/${PROPERTY_TYPE_FR[t]}-a-vendre-${c.slug}`,
+          `${plural} à vendre à ${name}${SUFFIX}`,
+          `Découvrez nos ${pluralLc} à vendre à ${name} avec I.D.A Immobilier. Annonces exclusives, photos détaillées et accompagnement personnalisé pour votre achat.`,
+          typeUrl,
+          [
+            home,
+            { name: `Immobilier à ${name}`, url: cityUrl },
+            { name: `${plural} à vendre`, url: typeUrl },
+          ],
+        );
+        seoCount++;
+      }
+    }
+
+    // Agent profiles
+    const { inArray, eq: eqOp, and: andOp } = await import("drizzle-orm");
+    const agents = await db
+      .select({
+        id: usersTable.id,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        role: usersTable.role,
+        avatarUrl: usersTable.avatarUrl,
+      })
+      .from(usersTable)
+      .where(
+        andOp(
+          inArray(usersTable.role, ["agent", "agency_manager", "admin", "superadmin"]),
+          eqOp(usersTable.isActive, true),
+        ),
+      );
+    for (const a of agents) {
+      const fullName = `${a.firstName} ${a.lastName}`;
+      const jobTitle = ROLE_LABEL[a.role] ?? "Conseiller immobilier";
+      const slug = buildAgentSlug(a);
+      const agentUrl = `${BASE_URL}/agents/${slug}`;
+      seoHead(
+        `/agents/${slug}`,
+        `${fullName} — ${jobTitle} I.D.A Immobilier${SUFFIX}`,
+        `${fullName}, ${jobTitle.toLowerCase()} chez I.D.A Immobilier. Découvrez ses biens à vendre et à louer et contactez-le pour votre projet immobilier en Provence.`,
+        agentUrl,
+        [home, { name: "Nos agences", url: `${BASE_URL}/nos-agences` }, { name: fullName, url: agentUrl }],
+        a.avatarUrl ?? DEFAULT_OG_IMAGE,
+      );
+      seoCount++;
+    }
+    console.log(`[prerender] SEO pages done (${seoCount}).`);
+
     // Close the DB pool so the process exits cleanly
     const { pool } = await import("@workspace/db");
     await pool.end();

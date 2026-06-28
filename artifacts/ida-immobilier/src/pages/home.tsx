@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useListFeaturedProperties } from "@workspace/api-client-react";
+import { slugify } from "@workspace/seo";
 import { PropertyCard } from "@/components/property-card";
 import heroBg from "@/assets/images/hero-bg.png";
 import estimationVilla from "@/assets/images/estimation-villa.png";
@@ -271,7 +272,7 @@ export default function Home() {
                 transition={{ duration: 0.4, delay: i * 0.05 }}
               >
                 <Link
-                  href={`/acheter?city=${encodeURIComponent(city)}`}
+                  href={`/immobilier-${slugify(city)}`}
                   className="group flex items-center gap-3 bg-background rounded-xl px-5 py-4 border border-border shadow-sm hover:border-accent hover:shadow-md transition-all"
                 >
                   <MapPin className="w-5 h-5 text-accent shrink-0" />

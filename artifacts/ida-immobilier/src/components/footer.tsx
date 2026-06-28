@@ -1,5 +1,17 @@
 import { Link } from "wouter";
+import { slugify } from "@workspace/seo";
 import logoSquare from "@assets/full_logo3__1780868246992.png";
+
+const SECTEURS = [
+  "Marseille",
+  "Aix-en-Provence",
+  "Marignane",
+  "Aubagne",
+  "Martigues",
+  "Vitrolles",
+  "Cassis",
+  "La Ciotat",
+] as const;
 
 export function Footer() {
   return (
@@ -41,6 +53,18 @@ export function Footer() {
             <li><a href="mailto:contact@ida-immobilier.com" className="hover:text-accent transition-colors">contact@ida-immobilier.com</a></li>
           </ul>
         </div>
+      </div>
+      <div className="container mx-auto px-4 mt-12 pt-8 border-t border-primary-foreground/10">
+        <h4 className="font-serif text-sm mb-4 text-accent text-center md:text-left">Nos secteurs</h4>
+        <ul className="flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 text-sm text-primary-foreground/70">
+          {SECTEURS.map((city) => (
+            <li key={city}>
+              <Link href={`/immobilier-${slugify(city)}`} className="hover:text-accent transition-colors">
+                Immobilier à {city}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
       <div className="container mx-auto px-4 mt-12 pt-8 border-t border-primary-foreground/10 text-center text-sm text-primary-foreground/50">
         &copy; {new Date().getFullYear()} I.D.A Immobilier. Tous droits réservés.

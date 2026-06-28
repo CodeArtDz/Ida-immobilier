@@ -42,6 +42,7 @@ import {
   Accessibility,
   ArrowUpDown,
 } from "lucide-react";
+import { ResponsivePicture, type PictureMedia } from "@/components/responsive-picture";
 import property1 from "@/assets/images/property-1.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -86,11 +87,11 @@ function PropertyGallery({
     query: { queryKey: getListPropertyMediaQueryKey(propertyId) },
   });
 
-  const photos =
-    media?.filter((m) => m.type === "photo").map((m) => m.watermarkedUrl || m.url) ?? [];
-  const images =
-    photos.length > 0 ? photos : [mainImageUrl || property1 as string];
-  const total = images.length;
+  const photoMedia = media?.filter((m) => m.type === "photo") ?? [];
+  const slides: Array<PictureMedia | null> =
+    photoMedia.length > 0 ? photoMedia : [null];
+  const total = slides.length;
+  const fallbackSrc = (mainImageUrl || property1) as string;
 
   const prev = () => setCurrentIdx((i) => (i - 1 + total) % total);
   const next = () => setCurrentIdx((i) => (i + 1) % total);
@@ -109,13 +110,16 @@ function PropertyGallery({
     <>
       {/* Main slider */}
       <div className="w-full h-[60vh] bg-muted relative overflow-hidden">
-        {images.map((url, idx) => (
-          <img
-            key={url ?? idx}
-            src={url || property1}
-            alt={`${title} — ${idx + 1}`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 cursor-zoom-in select-none
+        {slides.map((slide, idx) => (
+          <ResponsivePicture
+            key={slide ? slide.url : `fallback-${idx}`}
+            media={slide ?? { url: fallbackSrc }}
+            fallback={property1}
+            alt={slide?.alt ?? `${title} — ${idx + 1}`}
+            loading={idx === 0 ? "eager" : "lazy"}
+            pictureClassName={`absolute inset-0 w-full h-full transition-opacity duration-500
               ${idx === currentIdx ? "opacity-100" : "opacity-0"}`}
+            className="w-full h-full object-cover cursor-zoom-in select-none"
             onClick={() => setLightboxOpen(true)}
             draggable={false}
           />
@@ -154,17 +158,18 @@ function PropertyGallery({
       {/* Thumbnail strip */}
       {total > 1 && (
         <div className="bg-muted/50 border-b border-border px-4 py-2 flex gap-2 overflow-x-auto scrollbar-thin">
-          {images.map((url, idx) => (
+          {slides.map((slide, idx) => (
             <button
-              key={url ?? idx}
+              key={slide ? slide.url : `thumb-${idx}`}
               onClick={() => setCurrentIdx(idx)}
               className={`shrink-0 w-16 h-12 rounded overflow-hidden border-2 transition-all duration-200 hover:opacity-100
                 ${idx === currentIdx
                   ? "border-primary opacity-100 scale-105"
                   : "border-transparent opacity-60"}`}
             >
-              <img
-                src={url || property1}
+              <ResponsivePicture
+                media={slide ?? { url: fallbackSrc }}
+                fallback={property1}
                 alt={`Miniature ${idx + 1}`}
                 className="w-full h-full object-cover"
                 draggable={false}
@@ -192,9 +197,11 @@ function PropertyGallery({
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <img
-            src={images[currentIdx] || property1}
-            alt={`${title} — ${currentIdx + 1}`}
+          <ResponsivePicture
+            media={slides[currentIdx] ?? { url: fallbackSrc }}
+            fallback={property1}
+            alt={slides[currentIdx]?.alt ?? `${title} — ${currentIdx + 1}`}
+            loading="eager"
             className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
             draggable={false}

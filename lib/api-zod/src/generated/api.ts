@@ -711,6 +711,11 @@ export const ListPropertyMediaResponseItem = zod.object({
   "propertyId": zod.number(),
   "url": zod.string(),
   "watermarkedUrl": zod.string().nullish(),
+  "webpUrl": zod.string().nullish(),
+  "avifUrl": zod.string().nullish(),
+  "alt": zod.string().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
   "type": zod.enum(['photo', 'video', 'floor_plan', 'pdf']),
   "caption": zod.string().nullish(),
   "order": zod.number(),
@@ -756,6 +761,11 @@ export const SetMainPropertyMediaResponseItem = zod.object({
   "propertyId": zod.number(),
   "url": zod.string(),
   "watermarkedUrl": zod.string().nullish(),
+  "webpUrl": zod.string().nullish(),
+  "avifUrl": zod.string().nullish(),
+  "alt": zod.string().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
   "type": zod.enum(['photo', 'video', 'floor_plan', 'pdf']),
   "caption": zod.string().nullish(),
   "order": zod.number(),
@@ -867,6 +877,246 @@ export const GetSimilarPropertiesResponseItem = zod.object({
   "updatedAt": zod.coerce.date().optional()
 })
 export const GetSimilarPropertiesResponse = zod.array(GetSimilarPropertiesResponseItem)
+
+
+/**
+ * @summary Get a property by its SEO slug
+ */
+export const GetPropertyBySlugParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetPropertyBySlugResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string().nullish(),
+  "type": zod.enum(['apartment', 'house', 'villa', 'land', 'commercial', 'garage', 'other', 'building', 'programme']),
+  "status": zod.enum(['draft', 'published', 'reserved', 'sold', 'rented', 'archived']),
+  "address": zod.string(),
+  "postalCode": zod.string(),
+  "city": zod.string(),
+  "department": zod.string().nullish(),
+  "region": zod.string().nullish(),
+  "country": zod.string().optional(),
+  "latitude": zod.number().nullish(),
+  "longitude": zod.number().nullish(),
+  "salePrice": zod.number().nullish(),
+  "rentalPrice": zod.number().nullish(),
+  "charges": zod.number().nullish(),
+  "agencyFees": zod.number().nullish(),
+  "taxeFonciere": zod.number().nullish(),
+  "livingArea": zod.number().nullish(),
+  "landArea": zod.number().nullish(),
+  "carrezArea": zod.number().nullish(),
+  "rooms": zod.number().nullish(),
+  "bedrooms": zod.number().nullish(),
+  "bathrooms": zod.number().nullish(),
+  "floor": zod.number().nullish(),
+  "totalFloors": zod.number().nullish(),
+  "yearBuilt": zod.number().nullish(),
+  "orientation": zod.string().nullish(),
+  "heating": zod.string().nullish(),
+  "kitchen": zod.string().nullish(),
+  "water": zod.string().nullish(),
+  "sanitation": zod.string().nullish(),
+  "livingRoomArea": zod.number().nullish(),
+  "garageArea": zod.number().nullish(),
+  "gardenArea": zod.number().nullish(),
+  "terraceArea": zod.number().nullish(),
+  "showerRooms": zod.number().nullish(),
+  "levels": zod.number().nullish(),
+  "indoorParking": zod.number().nullish(),
+  "outdoorParking": zod.number().nullish(),
+  "dpeRating": zod.string().nullish(),
+  "gesRating": zod.string().nullish(),
+  "energyConsumption": zod.number().nullish(),
+  "gesEmissions": zod.number().nullish(),
+  "annualEnergyCost": zod.number().nullish(),
+  "hasTerrace": zod.boolean().optional(),
+  "hasBalcony": zod.boolean().optional(),
+  "hasGarage": zod.boolean().optional(),
+  "hasParking": zod.boolean().optional(),
+  "hasGarden": zod.boolean().optional(),
+  "hasPool": zod.boolean().optional(),
+  "hasCellar": zod.boolean().optional(),
+  "hasElevator": zod.boolean().optional(),
+  "hasAirConditioning": zod.boolean().optional(),
+  "hasFiber": zod.boolean().optional(),
+  "hasFireplace": zod.boolean().optional(),
+  "hasDisabledAccess": zod.boolean().optional(),
+  "toilets": zod.number().nullish(),
+  "residenceName": zod.string().nullish(),
+  "shortDescription": zod.string().nullish(),
+  "fullDescription": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "agencyId": zod.number(),
+  "agencyName": zod.string().nullish(),
+  "ownerAgentId": zod.number(),
+  "currentAgentId": zod.number().nullish(),
+  "agentName": zod.string().nullish(),
+  "agentPhone": zod.string().nullish(),
+  "agentEmail": zod.string().nullish(),
+  "agentAvatarUrl": zod.string().nullish(),
+  "mainImageUrl": zod.string().nullish(),
+  "mediaCount": zod.number().optional(),
+  "viewCount": zod.number().optional(),
+  "favoriteCount": zod.number().optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Aggregated market stats for an area (city / type / postal code)
+ */
+export const GetAreaStatsQueryParams = zod.object({
+  "city": zod.coerce.string().optional(),
+  "postalCode": zod.coerce.string().optional(),
+  "type": zod.coerce.string().optional(),
+  "transaction": zod.enum(['sale', 'rent']).optional()
+})
+
+export const GetAreaStatsResponse = zod.object({
+  "count": zod.number(),
+  "saleCount": zod.number().optional(),
+  "rentalCount": zod.number().optional(),
+  "avgSalePrice": zod.number().nullish(),
+  "avgRentalPrice": zod.number().nullish(),
+  "avgPricePerM2": zod.number().nullish(),
+  "minSalePrice": zod.number().nullish(),
+  "maxSalePrice": zod.number().nullish(),
+  "byType": zod.array(zod.object({
+  "label": zod.string(),
+  "count": zod.number(),
+  "value": zod.number().nullish()
+}))
+})
+
+
+/**
+ * @summary List served cities (for SEO pages, sitemaps and internal links)
+ */
+export const ListCitiesResponseItem = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "postalCodes": zod.string(),
+  "department": zod.string(),
+  "departmentCode": zod.string().optional(),
+  "region": zod.string(),
+  "latitude": zod.number().nullish(),
+  "longitude": zod.number().nullish(),
+  "population": zod.number().nullish(),
+  "nearbyCitySlugs": zod.string(),
+  "intro": zod.string().nullish(),
+  "marketContext": zod.string().nullish(),
+  "livingThere": zod.string().nullish(),
+  "buyingAdvice": zod.string().nullish(),
+  "sellingAdvice": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "heroImageUrl": zod.string().nullish(),
+  "displayOrder": zod.number(),
+  "featured": zod.boolean()
+})
+export const ListCitiesResponse = zod.array(ListCitiesResponseItem)
+
+
+/**
+ * @summary Get a city with market stats and nearby cities
+ */
+export const GetCityDetailParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetCityDetailResponse = zod.object({
+  "city": zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "postalCodes": zod.string(),
+  "department": zod.string(),
+  "departmentCode": zod.string().optional(),
+  "region": zod.string(),
+  "latitude": zod.number().nullish(),
+  "longitude": zod.number().nullish(),
+  "population": zod.number().nullish(),
+  "nearbyCitySlugs": zod.string(),
+  "intro": zod.string().nullish(),
+  "marketContext": zod.string().nullish(),
+  "livingThere": zod.string().nullish(),
+  "buyingAdvice": zod.string().nullish(),
+  "sellingAdvice": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "heroImageUrl": zod.string().nullish(),
+  "displayOrder": zod.number(),
+  "featured": zod.boolean()
+}),
+  "stats": zod.object({
+  "count": zod.number(),
+  "saleCount": zod.number().optional(),
+  "rentalCount": zod.number().optional(),
+  "avgSalePrice": zod.number().nullish(),
+  "avgRentalPrice": zod.number().nullish(),
+  "avgPricePerM2": zod.number().nullish(),
+  "minSalePrice": zod.number().nullish(),
+  "maxSalePrice": zod.number().nullish(),
+  "byType": zod.array(zod.object({
+  "label": zod.string(),
+  "count": zod.number(),
+  "value": zod.number().nullish()
+}))
+}),
+  "nearby": zod.array(zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "postalCodes": zod.string(),
+  "department": zod.string(),
+  "departmentCode": zod.string().optional(),
+  "region": zod.string(),
+  "latitude": zod.number().nullish(),
+  "longitude": zod.number().nullish(),
+  "population": zod.number().nullish(),
+  "nearbyCitySlugs": zod.string(),
+  "intro": zod.string().nullish(),
+  "marketContext": zod.string().nullish(),
+  "livingThere": zod.string().nullish(),
+  "buyingAdvice": zod.string().nullish(),
+  "sellingAdvice": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "heroImageUrl": zod.string().nullish(),
+  "displayOrder": zod.number(),
+  "featured": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Get a public agent profile with their active listings count
+ */
+export const GetAgentProfileParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetAgentProfileResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "agencyId": zod.number().nullish(),
+  "agencyName": zod.string().nullish(),
+  "propertyCount": zod.number()
+})
 
 
 /**

@@ -1,8 +1,17 @@
 import { Router } from "express";
-import { db, propertiesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  db,
+  propertiesTable,
+  propertyMediaTable,
+  citiesTable,
+  usersTable,
+} from "@workspace/db";
+import { eq, and, inArray, asc } from "drizzle-orm";
+import { buildAgentSlug, PROPERTY_TYPE_FR } from "@workspace/seo";
 
 const router = Router();
+
+const SITE_TYPES = ["apartment", "house", "villa", "land"] as const;
 
 const STATIC_ROUTES: Array<{ loc: string; changefreq: string; priority: string }> = [
   { loc: "/",                  changefreq: "daily",   priority: "1.0" },
@@ -23,51 +32,196 @@ function escapeXml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-router.get("/sitemap.xml", async (req, res) => {
-  try {
-    const domain = process.env.SITE_DOMAIN || "https://ida-immobilier.com";
+function domainOf(): string {
+  return process.env.SITE_DOMAIN || "https://ida-immobilier.com";
+}
 
-    const publishedProperties = await db
-      .select({
-        id: propertiesTable.id,
-        updatedAt: propertiesTable.updatedAt,
-      })
+interface UrlEntry {
+  loc: string;
+  lastmod?: string;
+  changefreq?: string;
+  priority?: string;
+  images?: string[];
+}
+
+function renderUrlset(entries: UrlEntry[], withImages = false): string {
+  const ns = withImages
+    ? ` xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"`
+    : "";
+  const body = entries
+    .map((e) => {
+      const parts = [`    <loc>${escapeXml(e.loc)}</loc>`];
+      if (e.lastmod) parts.push(`    <lastmod>${e.lastmod}</lastmod>`);
+      if (e.changefreq) parts.push(`    <changefreq>${e.changefreq}</changefreq>`);
+      if (e.priority) parts.push(`    <priority>${e.priority}</priority>`);
+      for (const img of e.images ?? []) {
+        parts.push(`    <image:image><image:loc>${escapeXml(img)}</image:loc></image:image>`);
+      }
+      return `  <url>\n${parts.join("\n")}\n  </url>`;
+    })
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${ns}>\n${body}\n</urlset>`;
+}
+
+function sendXml(res: import("express").Response, xml: string): void {
+  res.set("Content-Type", "application/xml; charset=utf-8");
+  res.set("Cache-Control", "public, max-age=3600");
+  res.send(xml);
+}
+
+// ─── Sitemap index ────────────────────────────────────────────────────────────
+router.get("/sitemap.xml", (req, res) => {
+  const domain = domainOf();
+  const today = new Date().toISOString().split("T")[0];
+  const children = ["static", "properties", "cities", "agents"];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${children
+  .map(
+    (c) =>
+      `  <sitemap>\n    <loc>${escapeXml(`${domain}/sitemap-${c}.xml`)}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`,
+  )
+  .join("\n")}
+</sitemapindex>`;
+  sendXml(res, xml);
+});
+
+router.get("/sitemap-static.xml", (_req, res) => {
+  const domain = domainOf();
+  sendXml(
+    res,
+    renderUrlset(
+      STATIC_ROUTES.map((r) => ({
+        loc: domain + r.loc,
+        changefreq: r.changefreq,
+        priority: r.priority,
+      })),
+    ),
+  );
+});
+
+router.get("/sitemap-properties.xml", async (req, res) => {
+  try {
+    const domain = domainOf();
+    const today = new Date().toISOString().split("T")[0];
+    const published = await db
+      .select({ id: propertiesTable.id, updatedAt: propertiesTable.updatedAt })
       .from(propertiesTable)
       .where(eq(propertiesTable.status, "published"));
 
-    const today = new Date().toISOString().split("T")[0];
+    const ids = published.map((p) => p.id);
+    const media = ids.length
+      ? await db
+          .select({
+            propertyId: propertyMediaTable.propertyId,
+            url: propertyMediaTable.url,
+            watermarkedUrl: propertyMediaTable.watermarkedUrl,
+          })
+          .from(propertyMediaTable)
+          .where(and(inArray(propertyMediaTable.propertyId, ids), eq(propertyMediaTable.type, "photo")))
+          .orderBy(asc(propertyMediaTable.order))
+      : [];
 
-    const staticEntries = STATIC_ROUTES.map(
-      (r) =>
-        `  <url>\n    <loc>${escapeXml(domain + r.loc)}</loc>\n    <changefreq>${r.changefreq}</changefreq>\n    <priority>${r.priority}</priority>\n  </url>`
-    ).join("\n");
+    const toAbsolute = (u: string): string =>
+      /^https?:\/\//.test(u) ? u : `${domain}${u.startsWith("/") ? "" : "/"}${u}`;
 
-    const propertyEntries = publishedProperties
-      .map((p) => {
-        const lastmod = p.updatedAt
-          ? new Date(p.updatedAt).toISOString().split("T")[0]
-          : today;
-        return `  <url>\n    <loc>${escapeXml(`${domain}/annonce/${p.id}`)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
-      })
-      .join("\n");
+    const imagesByProperty = new Map<number, string[]>();
+    for (const m of media) {
+      const list = imagesByProperty.get(m.propertyId) ?? [];
+      if (list.length < 10) list.push(toAbsolute(m.watermarkedUrl ?? m.url));
+      imagesByProperty.set(m.propertyId, list);
+    }
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-          http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-
-${staticEntries}
-${propertyEntries ? "\n" + propertyEntries : ""}
-</urlset>`;
-
-    res.set("Content-Type", "application/xml; charset=utf-8");
-    res.set("Cache-Control", "public, max-age=3600");
-    res.send(xml);
+    sendXml(
+      res,
+      renderUrlset(
+        published.map((p) => ({
+          loc: `${domain}/annonce/${p.id}`,
+          lastmod: p.updatedAt ? new Date(p.updatedAt).toISOString().split("T")[0] : today,
+          changefreq: "weekly",
+          priority: "0.8",
+          images: imagesByProperty.get(p.id) ?? [],
+        })),
+        true,
+      ),
+    );
   } catch (err) {
-    req.log.error({ err }, "Failed to generate sitemap");
+    req.log.error({ err }, "Failed to generate properties sitemap");
     res.status(500).send("Internal Server Error");
   }
+});
+
+router.get("/sitemap-cities.xml", async (req, res) => {
+  try {
+    const domain = domainOf();
+    const cities = await db.select().from(citiesTable).orderBy(asc(citiesTable.displayOrder));
+    const entries: UrlEntry[] = [];
+    for (const c of cities) {
+      entries.push({ loc: `${domain}/immobilier-${c.slug}`, changefreq: "weekly", priority: "0.8" });
+      entries.push({ loc: `${domain}/agence-immobiliere-${c.slug}`, changefreq: "monthly", priority: "0.7" });
+      entries.push({ loc: `${domain}/estimation-immobiliere-${c.slug}`, changefreq: "monthly", priority: "0.7" });
+      for (const t of SITE_TYPES) {
+        entries.push({
+          loc: `${domain}/${PROPERTY_TYPE_FR[t]}-a-vendre-${c.slug}`,
+          changefreq: "weekly",
+          priority: "0.6",
+        });
+      }
+    }
+    sendXml(res, renderUrlset(entries));
+  } catch (err) {
+    req.log.error({ err }, "Failed to generate cities sitemap");
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.get("/sitemap-agents.xml", async (req, res) => {
+  try {
+    const domain = domainOf();
+    const agents = await db
+      .select({
+        id: usersTable.id,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+      })
+      .from(usersTable)
+      .where(
+        and(
+          inArray(usersTable.role, ["agent", "agency_manager", "admin", "superadmin"]),
+          eq(usersTable.isActive, true),
+        ),
+      );
+    sendXml(
+      res,
+      renderUrlset(
+        agents.map((a) => ({
+          loc: `${domain}/agents/${buildAgentSlug(a)}`,
+          changefreq: "monthly",
+          priority: "0.5",
+        })),
+      ),
+    );
+  } catch (err) {
+    req.log.error({ err }, "Failed to generate agents sitemap");
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.get("/robots.txt", (_req, res) => {
+  const domain = domainOf();
+  const body = `User-agent: *
+Allow: /
+Disallow: /tableau-de-bord
+Disallow: /espace-client
+Disallow: /connexion
+Disallow: /inscription
+Disallow: /api/
+
+Sitemap: ${domain}/sitemap.xml
+`;
+  res.set("Content-Type", "text/plain; charset=utf-8");
+  res.set("Cache-Control", "public, max-age=3600");
+  res.send(body);
 });
 
 export default router;

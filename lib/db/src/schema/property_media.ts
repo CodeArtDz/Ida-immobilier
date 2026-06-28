@@ -9,6 +9,15 @@ export const propertyMediaTable = pgTable("property_media", {
   propertyId: integer("property_id").notNull(),
   url: text("url").notNull(),
   watermarkedUrl: text("watermarked_url"),
+  // Modern responsive variants generated at upload time for image SEO / Core
+  // Web Vitals. Null on legacy rows uploaded before the pipeline existed.
+  webpUrl: text("webp_url"),
+  avifUrl: text("avif_url"),
+  // Descriptive alt text (SEO + accessibility) and intrinsic dimensions for
+  // <img width/height> to avoid layout shift.
+  alt: text("alt"),
+  width: integer("width"),
+  height: integer("height"),
   type: mediaTypeEnum("type").notNull().default("photo"),
   caption: text("caption"),
   order: integer("order").notNull().default(0),

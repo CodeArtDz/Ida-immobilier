@@ -15,6 +15,7 @@ import analyticsRouter from "./analytics";
 import contactRouter from "./contact";
 import storageRouter from "./storage";
 import sitemapRouter from "./sitemap";
+import seoRouter from "./seo";
 
 const router: IRouter = Router();
 
@@ -23,6 +24,7 @@ router.use(healthRouter);
 router.use(storageRouter);
 router.use(authRouter);
 router.use(propertiesRouter);
+router.use(seoRouter);
 router.use(agenciesRouter);
 router.use(usersRouter);
 router.use(leadsRouter);

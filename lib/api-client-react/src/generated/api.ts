@@ -25,10 +25,14 @@ import type {
   AgencyInput,
   AgencyStats,
   AgencyUpdate,
+  AgentProfile,
   Appointment,
   AppointmentInput,
   AppointmentUpdate,
+  AreaStats,
   AuthResponse,
+  City,
+  CityDetail,
   CityStats,
   Conversation,
   ConversationInput,
@@ -38,6 +42,7 @@ import type {
   EstimationUpdate,
   Favorite,
   FavoriteInput,
+  GetAreaStatsParams,
   HealthStatus,
   Lead,
   LeadInput,
@@ -1477,6 +1482,398 @@ export function useGetSimilarProperties<TData = Awaited<ReturnType<typeof getSim
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetSimilarPropertiesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPropertyBySlugUrl = (slug: string,) => {
+
+
+
+
+  return `/api/properties/slug/${slug}`
+}
+
+/**
+ * @summary Get a property by its SEO slug
+ */
+export const getPropertyBySlug = async (slug: string, options?: RequestInit): Promise<Property> => {
+
+  return customFetch<Property>(getGetPropertyBySlugUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPropertyBySlugQueryKey = (slug: string,) => {
+    return [
+    `/api/properties/slug/${slug}`
+    ] as const;
+    }
+
+
+export const getGetPropertyBySlugQueryOptions = <TData = Awaited<ReturnType<typeof getPropertyBySlug>>, TError = ErrorType<void>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPropertyBySlug>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPropertyBySlugQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPropertyBySlug>>> = ({ signal }) => getPropertyBySlug(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPropertyBySlug>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPropertyBySlugQueryResult = NonNullable<Awaited<ReturnType<typeof getPropertyBySlug>>>
+export type GetPropertyBySlugQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a property by its SEO slug
+ */
+
+export function useGetPropertyBySlug<TData = Awaited<ReturnType<typeof getPropertyBySlug>>, TError = ErrorType<void>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPropertyBySlug>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPropertyBySlugQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAreaStatsUrl = (params?: GetAreaStatsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/properties/area-stats?${stringifiedParams}` : `/api/properties/area-stats`
+}
+
+/**
+ * @summary Aggregated market stats for an area (city / type / postal code)
+ */
+export const getAreaStats = async (params?: GetAreaStatsParams, options?: RequestInit): Promise<AreaStats> => {
+
+  return customFetch<AreaStats>(getGetAreaStatsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAreaStatsQueryKey = (params?: GetAreaStatsParams,) => {
+    return [
+    `/api/properties/area-stats`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAreaStatsQueryOptions = <TData = Awaited<ReturnType<typeof getAreaStats>>, TError = ErrorType<unknown>>(params?: GetAreaStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAreaStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAreaStatsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAreaStats>>> = ({ signal }) => getAreaStats(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAreaStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAreaStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getAreaStats>>>
+export type GetAreaStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Aggregated market stats for an area (city / type / postal code)
+ */
+
+export function useGetAreaStats<TData = Awaited<ReturnType<typeof getAreaStats>>, TError = ErrorType<unknown>>(
+ params?: GetAreaStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAreaStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAreaStatsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListCitiesUrl = () => {
+
+
+
+
+  return `/api/cities`
+}
+
+/**
+ * @summary List served cities (for SEO pages, sitemaps and internal links)
+ */
+export const listCities = async ( options?: RequestInit): Promise<City[]> => {
+
+  return customFetch<City[]>(getListCitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCitiesQueryKey = () => {
+    return [
+    `/api/cities`
+    ] as const;
+    }
+
+
+export const getListCitiesQueryOptions = <TData = Awaited<ReturnType<typeof listCities>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCities>>> = ({ signal }) => listCities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCities>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCitiesQueryResult = NonNullable<Awaited<ReturnType<typeof listCities>>>
+export type ListCitiesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List served cities (for SEO pages, sitemaps and internal links)
+ */
+
+export function useListCities<TData = Awaited<ReturnType<typeof listCities>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCitiesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCityDetailUrl = (slug: string,) => {
+
+
+
+
+  return `/api/cities/${slug}`
+}
+
+/**
+ * @summary Get a city with market stats and nearby cities
+ */
+export const getCityDetail = async (slug: string, options?: RequestInit): Promise<CityDetail> => {
+
+  return customFetch<CityDetail>(getGetCityDetailUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCityDetailQueryKey = (slug: string,) => {
+    return [
+    `/api/cities/${slug}`
+    ] as const;
+    }
+
+
+export const getGetCityDetailQueryOptions = <TData = Awaited<ReturnType<typeof getCityDetail>>, TError = ErrorType<void>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCityDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCityDetailQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCityDetail>>> = ({ signal }) => getCityDetail(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCityDetail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCityDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getCityDetail>>>
+export type GetCityDetailQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a city with market stats and nearby cities
+ */
+
+export function useGetCityDetail<TData = Awaited<ReturnType<typeof getCityDetail>>, TError = ErrorType<void>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCityDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCityDetailQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAgentProfileUrl = (slug: string,) => {
+
+
+
+
+  return `/api/agents/${slug}`
+}
+
+/**
+ * @summary Get a public agent profile with their active listings count
+ */
+export const getAgentProfile = async (slug: string, options?: RequestInit): Promise<AgentProfile> => {
+
+  return customFetch<AgentProfile>(getGetAgentProfileUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAgentProfileQueryKey = (slug: string,) => {
+    return [
+    `/api/agents/${slug}`
+    ] as const;
+    }
+
+
+export const getGetAgentProfileQueryOptions = <TData = Awaited<ReturnType<typeof getAgentProfile>>, TError = ErrorType<void>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAgentProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAgentProfileQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAgentProfile>>> = ({ signal }) => getAgentProfile(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAgentProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAgentProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getAgentProfile>>>
+export type GetAgentProfileQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a public agent profile with their active listings count
+ */
+
+export function useGetAgentProfile<TData = Awaited<ReturnType<typeof getAgentProfile>>, TError = ErrorType<void>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAgentProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAgentProfileQueryOptions(slug,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -1,6 +1,7 @@
 export * from "./users";
 export * from "./sessions";
 export * from "./agencies";
+export * from "./cities";
 export * from "./properties";
 export * from "./property_media";
 export * from "./property_assignments";

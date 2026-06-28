@@ -12,8 +12,11 @@ import {
 import { eq, and, desc, sql, ilike, gte, lte, count, inArray } from "drizzle-orm";
 import { requireAuth, optionalAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { pingIndexNow } from "../lib/indexnow";
+import { buildPropertySlug } from "@workspace/seo";
 import multer from "multer";
 import { applyWatermarkBuffer } from "../lib/watermark";
+import { generateImageVariants } from "../lib/image-variants";
 import { getStorageService } from "../lib/storage";
 import { geocodeAddress, hasValidCoords } from "../lib/geocode";
 import { PDFParse } from "pdf-parse";
@@ -317,6 +320,121 @@ router.get("/properties/stats", requireAuth, async (_req, res) => {
   }
 });
 
+// GET /properties/area-stats — aggregated market stats for an SEO area page.
+// Published listings only; small result sets so aggregation is done in JS.
+router.get("/properties/area-stats", async (req, res) => {
+  try {
+    const { city, postalCode, type, transaction } = req.query as Record<string, string>;
+    const conditions = [eq(propertiesTable.status, "published")];
+    if (city) conditions.push(ilike(propertiesTable.city, `%${city}%`));
+    if (postalCode) conditions.push(eq(propertiesTable.postalCode, postalCode));
+    if (type) conditions.push(eq(propertiesTable.type, type as any));
+
+    const rows = await db
+      .select({
+        type: propertiesTable.type,
+        salePrice: propertiesTable.salePrice,
+        rentalPrice: propertiesTable.rentalPrice,
+        livingArea: propertiesTable.livingArea,
+      })
+      .from(propertiesTable)
+      .where(and(...conditions));
+
+    const filtered =
+      transaction === "rent"
+        ? rows.filter((r) => r.rentalPrice != null)
+        : transaction === "sale"
+          ? rows.filter((r) => r.salePrice != null)
+          : rows;
+
+    const sales = filtered.map((r) => (r.salePrice ? parseFloat(r.salePrice) : null)).filter((n): n is number => n != null);
+    const rentals = filtered.map((r) => (r.rentalPrice ? parseFloat(r.rentalPrice) : null)).filter((n): n is number => n != null);
+    const pricePerM2 = filtered
+      .map((r) => {
+        const price = r.salePrice ? parseFloat(r.salePrice) : null;
+        return price && r.livingArea ? price / r.livingArea : null;
+      })
+      .filter((n): n is number => n != null);
+
+    const avg = (arr: number[]) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null);
+
+    const byTypeMap = new Map<string, { count: number; total: number }>();
+    for (const r of filtered) {
+      const entry = byTypeMap.get(r.type) ?? { count: 0, total: 0 };
+      entry.count += 1;
+      if (r.salePrice) entry.total += parseFloat(r.salePrice);
+      byTypeMap.set(r.type, entry);
+    }
+
+    res.json({
+      count: filtered.length,
+      saleCount: sales.length,
+      rentalCount: rentals.length,
+      avgSalePrice: avg(sales),
+      avgRentalPrice: avg(rentals),
+      avgPricePerM2: avg(pricePerM2),
+      minSalePrice: sales.length ? Math.min(...sales) : null,
+      maxSalePrice: sales.length ? Math.max(...sales) : null,
+      byType: [...byTypeMap.entries()].map(([label, v]) => ({
+        label,
+        count: v.count,
+        value: v.count ? Math.round(v.total / v.count) : null,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err }, "Area stats error");
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// GET /properties/slug/:slug — public lookup by SEO slug.
+router.get("/properties/slug/:slug", optionalAuth, async (req, res) => {
+  try {
+    const slug = req.params.slug as string;
+    const [property] = await db.select().from(propertiesTable).where(eq(propertiesTable.slug, slug));
+    if (!property) { res.status(404).json({ error: "Bien non trouvé" }); return; }
+
+    const user = (req as any).user;
+    if (property.status !== "published" && (!user || user.role === "client")) {
+      res.status(404).json({ error: "Bien non trouvé" }); return;
+    }
+
+    await db.update(propertiesTable).set({ viewCount: property.viewCount + 1 }).where(eq(propertiesTable.id, property.id));
+
+    const effective = await resolveEffectiveAgents([property]);
+    const agentId = effective.get(property.id) ?? property.ownerAgentId;
+    const [agent, agency, [mainMedia]] = await Promise.all([
+      db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, phone: usersTable.phone, email: usersTable.email, avatarUrl: usersTable.avatarUrl })
+        .from(usersTable).where(eq(usersTable.id, agentId)).then(r => r[0]),
+      db.select({ name: agenciesTable.name }).from(agenciesTable).where(eq(agenciesTable.id, property.agencyId)).then(r => r[0]),
+      db.select({ url: propertyMediaTable.url }).from(propertyMediaTable)
+        .where(and(eq(propertyMediaTable.propertyId, property.id), eq(propertyMediaTable.type, "photo")))
+        .orderBy(propertyMediaTable.order).limit(1),
+    ]);
+
+    res.json({
+      ...property,
+      currentAgentId: agentId,
+      salePrice: property.salePrice ? parseFloat(property.salePrice) : null,
+      rentalPrice: property.rentalPrice ? parseFloat(property.rentalPrice) : null,
+      charges: property.charges ? parseFloat(property.charges) : null,
+      agencyFees: property.agencyFees ? parseFloat(property.agencyFees) : null,
+      taxeFonciere: property.taxeFonciere ? parseFloat(property.taxeFonciere) : null,
+      annualEnergyCost: property.annualEnergyCost ? parseFloat(property.annualEnergyCost) : null,
+      agentName: agent ? `${agent.firstName} ${agent.lastName}` : null,
+      agentPhone: agent?.phone ?? null,
+      agentEmail: agent?.email ?? null,
+      agentAvatarUrl: agent?.avatarUrl ?? null,
+      agencyName: agency?.name ?? null,
+      mainImageUrl: mainMedia?.url ?? null,
+      mediaCount: 0,
+    });
+  } catch (err) {
+    logger.error({ err }, "Get property by slug error");
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 // GET /properties/:id
 router.get("/properties/:id", optionalAuth, async (req, res) => {
   try {
@@ -390,7 +508,7 @@ router.post("/properties", requireAuth, async (req, res) => {
       }
     }
 
-    const [property] = await db.insert(propertiesTable).values({
+    const [inserted] = await db.insert(propertiesTable).values({
       ...data,
       latitude,
       longitude,
@@ -398,6 +516,18 @@ router.post("/properties", requireAuth, async (req, res) => {
       currentAgentId: user.id,
       agencyId: data.agencyId || user.agencyId,
     }).returning();
+
+    // Generate the SEO slug now that we have an id, then persist it.
+    const slug = buildPropertySlug({
+      id: inserted.id,
+      type: inserted.type,
+      city: inserted.city,
+      rooms: inserted.rooms,
+      livingArea: inserted.livingArea,
+    });
+    const [property] = await db.update(propertiesTable).set({ slug }).where(eq(propertiesTable.id, inserted.id)).returning();
+
+    if (property.status === "published") pingIndexNow([`/annonce/${property.id}`]);
 
     await db.insert(activityLogsTable).values({
       type: "property_created",
@@ -505,6 +635,7 @@ router.patch("/properties/:id/publish", requireAuth, async (req, res) => {
     const user = (req as any).user;
     const [updated] = await db.update(propertiesTable).set({ status: "published", updatedAt: new Date() }).where(eq(propertiesTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Bien non trouvé" }); return; }
+    pingIndexNow([`/annonce/${updated.id}`]);
     await db.insert(activityLogsTable).values({
       type: "property_published",
       description: `Bien publié : ${updated.title}`,
@@ -598,15 +729,38 @@ router.post("/properties/:id/media/upload", requireAuth, upload.single("file"), 
     const objectPath = await objectStorageService.uploadBuffer(file.buffer, file.mimetype);
     const originalUrl = objectStorageService.toPublicUrl(objectPath);
     let watermarkedUrl: string | null = null;
+    let webpUrl: string | null = null;
+    let avifUrl: string | null = null;
+    let width: number | null = null;
+    let height: number | null = null;
 
     if (isImage) {
+      // Watermark first so the responsive variants carry the watermark too.
+      let variantSource = file.buffer;
       try {
         const wmBuffer = await applyWatermarkBuffer(file.buffer);
         const wmPath = await objectStorageService.uploadBuffer(wmBuffer, "image/jpeg");
         watermarkedUrl = objectStorageService.toPublicUrl(wmPath);
+        variantSource = wmBuffer;
       } catch (wmErr) {
         logger.warn({ wmErr }, "Watermark failed, using original");
         watermarkedUrl = originalUrl;
+      }
+
+      // Generate WebP + AVIF variants and capture intrinsic dimensions for SEO
+      // and Core Web Vitals. Failure here is non-fatal — fall back to JPEG.
+      try {
+        const variants = await generateImageVariants(variantSource);
+        const [webpPath, avifPath] = await Promise.all([
+          objectStorageService.uploadBuffer(variants.webp, "image/webp"),
+          objectStorageService.uploadBuffer(variants.avif, "image/avif"),
+        ]);
+        webpUrl = objectStorageService.toPublicUrl(webpPath);
+        avifUrl = objectStorageService.toPublicUrl(avifPath);
+        width = variants.width;
+        height = variants.height;
+      } catch (varErr) {
+        logger.warn({ varErr }, "Variant generation failed, JPEG only");
       }
     }
 
@@ -618,10 +772,28 @@ router.post("/properties/:id/media/upload", requireAuth, upload.single("file"), 
       .limit(1);
     const nextOrder = (existing[0]?.order ?? -1) + 1;
 
+    // Build descriptive alt text from the property for image SEO / accessibility.
+    let alt: string | null = null;
+    if (isImage) {
+      const [prop] = await db
+        .select({ title: propertiesTable.title, city: propertiesTable.city })
+        .from(propertiesTable)
+        .where(eq(propertiesTable.id, propertyId))
+        .limit(1);
+      if (prop) {
+        alt = `${prop.title}${prop.city ? ` à ${prop.city}` : ""} — photo ${nextOrder + 1} | I.D.A Immobilier`;
+      }
+    }
+
     const [media] = await db.insert(propertyMediaTable).values({
       propertyId,
       url: originalUrl,
       watermarkedUrl,
+      webpUrl,
+      avifUrl,
+      alt,
+      width,
+      height,
       type: isImage ? "photo" : "video",
       order: nextOrder,
     }).returning();

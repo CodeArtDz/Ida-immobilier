@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useParams } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +24,8 @@ import Honoraires from "@/pages/honoraires";
 import Connexion from "@/pages/connexion";
 import Inscription from "@/pages/inscription";
 import NotFound from "@/pages/not-found";
+import SeoResolver from "@/pages/seo/resolver";
+import AgentPage from "@/pages/seo/agent";
 
 import ClientDashboard from "@/pages/client/dashboard";
 import ClientProfil from "@/pages/client/profil";
@@ -59,6 +61,16 @@ function ProtectedRoute({ component: Component, layout: Layout, allowedRoles }: 
 
 function PublicRoute({ component: Component }: { component: React.ComponentType }) {
   return <PublicLayout><Component /></PublicLayout>;
+}
+
+function SeoResolverRoute() {
+  const { slug } = useParams();
+  return <SeoResolver slug={slug ?? ""} />;
+}
+
+function AgentPageRoute() {
+  const { slug } = useParams();
+  return <AgentPage slug={slug ?? ""} />;
 }
 
 function Router() {
@@ -100,6 +112,9 @@ function Router() {
       <Route path="/tableau-de-bord/agences" component={() => <ProtectedRoute component={AdminAgences} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
       <Route path="/tableau-de-bord/utilisateurs" component={() => <ProtectedRoute component={AdminUtilisateurs} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
       <Route path="/tableau-de-bord/profil" component={() => <ProtectedRoute component={AdminProfil} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
+
+      <Route path="/agents/:slug" component={() => <PublicRoute component={AgentPageRoute} />} />
+      <Route path="/:slug" component={() => <PublicRoute component={SeoResolverRoute} />} />
 
       <Route component={() => <PublicRoute component={NotFound} />} />
     </Switch>

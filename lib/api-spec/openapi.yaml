@@ -464,6 +464,117 @@ paths:
                 items:
                   $ref: "#/components/schemas/Property"
 
+  /properties/slug/{slug}:
+    get:
+      operationId: getPropertyBySlug
+      tags: [properties]
+      summary: Get a property by its SEO slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Property
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "404":
+          description: Not found
+
+  /properties/area-stats:
+    get:
+      operationId: getAreaStats
+      tags: [properties]
+      summary: Aggregated market stats for an area (city / type / postal code)
+      parameters:
+        - in: query
+          name: city
+          schema:
+            type: string
+        - in: query
+          name: postalCode
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: transaction
+          schema:
+            type: string
+            enum: [sale, rent]
+      responses:
+        "200":
+          description: Area stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AreaStats"
+
+  # CITIES
+  /cities:
+    get:
+      operationId: listCities
+      tags: [cities]
+      summary: List served cities (for SEO pages, sitemaps and internal links)
+      responses:
+        "200":
+          description: Cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/City"
+
+  /cities/{slug}:
+    get:
+      operationId: getCityDetail
+      tags: [cities]
+      summary: Get a city with market stats and nearby cities
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: City detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CityDetail"
+        "404":
+          description: Not found
+
+  # AGENTS
+  /agents/{slug}:
+    get:
+      operationId: getAgentProfile
+      tags: [agents]
+      summary: Get a public agent profile with their active listings count
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentProfile"
+        "404":
+          description: Not found
+
   # AGENCIES
   /agencies:
     get:
@@ -1740,6 +1851,122 @@ components:
           type: string
           format: date-time
 
+    City:
+      type: object
+      required: [id, slug, name, postalCodes, department, region, nearbyCitySlugs, displayOrder, featured]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        postalCodes:
+          type: string
+        department:
+          type: string
+        departmentCode:
+          type: string
+        region:
+          type: string
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        population:
+          type: ["integer", "null"]
+        nearbyCitySlugs:
+          type: string
+        intro:
+          type: ["string", "null"]
+        marketContext:
+          type: ["string", "null"]
+        livingThere:
+          type: ["string", "null"]
+        buyingAdvice:
+          type: ["string", "null"]
+        sellingAdvice:
+          type: ["string", "null"]
+        metaTitle:
+          type: ["string", "null"]
+        metaDescription:
+          type: ["string", "null"]
+        heroImageUrl:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+        featured:
+          type: boolean
+
+    AreaStats:
+      type: object
+      required: [count, byType]
+      properties:
+        count:
+          type: integer
+        saleCount:
+          type: integer
+        rentalCount:
+          type: integer
+        avgSalePrice:
+          type: ["number", "null"]
+        avgRentalPrice:
+          type: ["number", "null"]
+        avgPricePerM2:
+          type: ["number", "null"]
+        minSalePrice:
+          type: ["number", "null"]
+        maxSalePrice:
+          type: ["number", "null"]
+        byType:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatGroup"
+
+    CityDetail:
+      type: object
+      required: [city, stats, nearby]
+      properties:
+        city:
+          $ref: "#/components/schemas/City"
+        stats:
+          $ref: "#/components/schemas/AreaStats"
+        nearby:
+          type: array
+          items:
+            $ref: "#/components/schemas/City"
+
+    AgentProfile:
+      type: object
+      required: [id, slug, firstName, lastName, role, propertyCount]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        jobTitle:
+          type: ["string", "null"]
+        agencyId:
+          type: ["integer", "null"]
+        agencyName:
+          type: ["string", "null"]
+        propertyCount:
+          type: integer
+
     PropertyListResponse:
       type: object
       required: [data, total, page, limit]
@@ -2039,6 +2266,16 @@ components:
           type: string
         watermarkedUrl:
           type: ["string", "null"]
+        webpUrl:
+          type: ["string", "null"]
+        avifUrl:
+          type: ["string", "null"]
+        alt:
+          type: ["string", "null"]
+        width:
+          type: ["integer", "null"]
+        height:
+          type: ["integer", "null"]
         type:
           type: string
           enum: [photo, video, floor_plan, pdf]

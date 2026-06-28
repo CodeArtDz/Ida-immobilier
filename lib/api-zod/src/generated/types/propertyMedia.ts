@@ -13,6 +13,16 @@ export interface PropertyMedia {
   url: string;
   /** @nullable */
   watermarkedUrl?: string | null;
+  /** @nullable */
+  webpUrl?: string | null;
+  /** @nullable */
+  avifUrl?: string | null;
+  /** @nullable */
+  alt?: string | null;
+  /** @nullable */
+  width?: number | null;
+  /** @nullable */
+  height?: number | null;
   type: PropertyMediaType;
   /** @nullable */
   caption?: string | null;

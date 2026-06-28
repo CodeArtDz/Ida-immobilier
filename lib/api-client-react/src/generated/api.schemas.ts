@@ -311,6 +311,94 @@ export interface Property {
   updatedAt?: string;
 }
 
+export interface City {
+  id: number;
+  slug: string;
+  name: string;
+  postalCodes: string;
+  department: string;
+  departmentCode?: string;
+  region: string;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
+  /** @nullable */
+  population?: number | null;
+  nearbyCitySlugs: string;
+  /** @nullable */
+  intro?: string | null;
+  /** @nullable */
+  marketContext?: string | null;
+  /** @nullable */
+  livingThere?: string | null;
+  /** @nullable */
+  buyingAdvice?: string | null;
+  /** @nullable */
+  sellingAdvice?: string | null;
+  /** @nullable */
+  metaTitle?: string | null;
+  /** @nullable */
+  metaDescription?: string | null;
+  /** @nullable */
+  heroImageUrl?: string | null;
+  displayOrder: number;
+  featured: boolean;
+}
+
+export interface StatGroup {
+  label: string;
+  count: number;
+  /** @nullable */
+  value?: number | null;
+}
+
+export interface AreaStats {
+  count: number;
+  saleCount?: number;
+  rentalCount?: number;
+  /** @nullable */
+  avgSalePrice?: number | null;
+  /** @nullable */
+  avgRentalPrice?: number | null;
+  /** @nullable */
+  avgPricePerM2?: number | null;
+  /** @nullable */
+  minSalePrice?: number | null;
+  /** @nullable */
+  maxSalePrice?: number | null;
+  byType: StatGroup[];
+}
+
+export interface CityDetail {
+  city: City;
+  stats: AreaStats;
+  nearby: City[];
+}
+
+export interface AgentProfile {
+  id: number;
+  slug: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  /** @nullable */
+  jobTitle?: string | null;
+  /** @nullable */
+  agencyId?: number | null;
+  /** @nullable */
+  agencyName?: string | null;
+  propertyCount: number;
+}
+
 export interface PropertyListResponse {
   data: Property[];
   total: number;
@@ -466,13 +554,6 @@ export interface PropertyUpdate {
   hasDisabledAccess?: boolean;
 }
 
-export interface StatGroup {
-  label: string;
-  count: number;
-  /** @nullable */
-  value?: number | null;
-}
-
 export interface PropertyStats {
   total: number;
   byStatus: StatGroup[];
@@ -496,6 +577,16 @@ export interface PropertyMedia {
   url: string;
   /** @nullable */
   watermarkedUrl?: string | null;
+  /** @nullable */
+  webpUrl?: string | null;
+  /** @nullable */
+  avifUrl?: string | null;
+  /** @nullable */
+  alt?: string | null;
+  /** @nullable */
+  width?: number | null;
+  /** @nullable */
+  height?: number | null;
   type: PropertyMediaType;
   /** @nullable */
   caption?: string | null;
@@ -1064,6 +1155,21 @@ export const ListPropertiesStatus = {
   sold: 'sold',
   rented: 'rented',
   archived: 'archived',
+} as const;
+
+export type GetAreaStatsParams = {
+city?: string;
+postalCode?: string;
+type?: string;
+transaction?: GetAreaStatsTransaction;
+};
+
+export type GetAreaStatsTransaction = typeof GetAreaStatsTransaction[keyof typeof GetAreaStatsTransaction];
+
+
+export const GetAreaStatsTransaction = {
+  sale: 'sale',
+  rent: 'rent',
 } as const;
 
 export type ListUsersParams = {

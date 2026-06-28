@@ -6,11 +6,13 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "seed": "tsx ./src/seed.ts",
+    "seed-seo": "tsx ./src/seed-seo.ts",
     "prerender": "tsx ./src/prerender.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
+    "@workspace/seo": "workspace:*",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {

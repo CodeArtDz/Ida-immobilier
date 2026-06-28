@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { MapPin, Bed, Maximize, ChevronLeft, ChevronRight, Images, Trees, Home, Building2 } from "lucide-react";
 import type { Property } from "@workspace/api-client-react";
 import { useListPropertyMedia, getListPropertyMediaQueryKey } from "@workspace/api-client-react";
+import { ResponsivePicture, type PictureMedia } from "@/components/responsive-picture";
 import property1 from "@/assets/images/property-1.png";
 
 const DPE_COLOR: Record<string, string> = {
@@ -26,10 +27,10 @@ function CardSlider({ propertyId, mainImageUrl, title }: {
     },
   });
 
-  const photos =
-    media?.filter((m) => m.type === "photo").map((m) => m.watermarkedUrl || m.url) ?? [];
-  const images = photos.length > 0 ? photos : [mainImageUrl || property1];
-  const total = images.length;
+  const photoMedia = media?.filter((m) => m.type === "photo") ?? [];
+  const slides: Array<PictureMedia | null> =
+    photoMedia.length > 0 ? photoMedia : [null];
+  const total = slides.length;
 
   const goPrev = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,13 +49,16 @@ function CardSlider({ propertyId, mainImageUrl, title }: {
       className="relative w-full h-full overflow-hidden bg-muted"
       onMouseEnter={() => setHovered(true)}
     >
-      {images.map((url, idx) => (
-        <img
-          key={url ?? idx}
-          src={url || property1}
-          alt={`${title} — photo ${idx + 1}`}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500
+      {slides.map((slide, idx) => (
+        <ResponsivePicture
+          key={slide ? slide.url : `fallback-${idx}`}
+          media={slide ?? { url: mainImageUrl || property1 }}
+          fallback={property1}
+          alt={slide?.alt ?? `${title} — photo ${idx + 1}`}
+          loading={idx === 0 ? "eager" : "lazy"}
+          pictureClassName={`absolute inset-0 w-full h-full transition-opacity duration-500
             ${idx === currentIdx ? "opacity-100" : "opacity-0"}`}
+          className="w-full h-full object-cover"
         />
       ))}
 
@@ -73,7 +77,7 @@ function CardSlider({ propertyId, mainImageUrl, title }: {
             <ChevronRight className="w-4 h-4" />
           </button>
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1 items-center">
-            {images.map((_, idx) => (
+            {slides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={(e) => {

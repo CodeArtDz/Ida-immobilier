@@ -2,6 +2,7 @@ import { db } from "@workspace/db";
 import {
   usersTable,
   agenciesTable,
+  citiesTable,
   propertiesTable,
   propertyMediaTable,
   leadsTable,
@@ -9,6 +10,9 @@ import {
   estimationsTable,
   activityLogsTable,
 } from "@workspace/db";
+import { buildPropertySlug } from "@workspace/seo";
+import { eq } from "drizzle-orm";
+import { CITIES_SEED } from "./cities-data";
 import crypto from "crypto";
 
 async function hashPassword(password: string): Promise<string> {
@@ -131,6 +135,10 @@ async function seed() {
   ]).returning();
 
   console.log("Users created");
+
+  // 2b. Seed served cities (SEO registry)
+  await db.insert(citiesTable).values(CITIES_SEED).onConflictDoNothing();
+  console.log(`${CITIES_SEED.length} cities seeded`);
 
   // 3. Create properties
   const propertiesData = [
@@ -434,6 +442,19 @@ async function seed() {
 
   const insertedProperties = await db.insert(propertiesTable).values(propertiesData).returning();
   console.log(`${insertedProperties.length} properties created`);
+
+  // Backfill SEO slugs for every property.
+  for (const prop of insertedProperties) {
+    const slug = buildPropertySlug({
+      id: prop.id,
+      type: prop.type,
+      city: prop.city,
+      rooms: prop.rooms,
+      livingArea: prop.livingArea,
+    });
+    await db.update(propertiesTable).set({ slug }).where(eq(propertiesTable.id, prop.id));
+  }
+  console.log("Property slugs backfilled");
 
   // 4. Add placeholder media (real images via description, agent will use generated images in frontend)
   const mediaData = [
