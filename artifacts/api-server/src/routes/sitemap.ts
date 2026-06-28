@@ -73,7 +73,7 @@ function sendXml(res: import("express").Response, xml: string): void {
 router.get("/sitemap.xml", (req, res) => {
   const domain = domainOf();
   const today = new Date().toISOString().split("T")[0];
-  const children = ["static", "properties", "cities", "agents"];
+  const children = ["static", "properties", "cities", "agents", "images"];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${children
@@ -147,6 +147,55 @@ router.get("/sitemap-properties.xml", async (req, res) => {
     );
   } catch (err) {
     req.log.error({ err }, "Failed to generate properties sitemap");
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// ─── Dedicated image sitemap (each property URL with its <image:image> set) ─────
+router.get("/sitemap-images.xml", async (req, res) => {
+  try {
+    const domain = domainOf();
+    const today = new Date().toISOString().split("T")[0];
+    const published = await db
+      .select({ id: propertiesTable.id, slug: propertiesTable.slug, updatedAt: propertiesTable.updatedAt })
+      .from(propertiesTable)
+      .where(eq(propertiesTable.status, "published"));
+
+    const ids = published.map((p) => p.id);
+    const media = ids.length
+      ? await db
+          .select({
+            propertyId: propertyMediaTable.propertyId,
+            url: propertyMediaTable.url,
+            watermarkedUrl: propertyMediaTable.watermarkedUrl,
+          })
+          .from(propertyMediaTable)
+          .where(and(inArray(propertyMediaTable.propertyId, ids), eq(propertyMediaTable.type, "photo")))
+          .orderBy(asc(propertyMediaTable.order))
+      : [];
+
+    const toAbsolute = (u: string): string =>
+      /^https?:\/\//.test(u) ? u : `${domain}${u.startsWith("/") ? "" : "/"}${u}`;
+
+    const imagesByProperty = new Map<number, string[]>();
+    for (const m of media) {
+      const list = imagesByProperty.get(m.propertyId) ?? [];
+      list.push(toAbsolute(m.watermarkedUrl ?? m.url));
+      imagesByProperty.set(m.propertyId, list);
+    }
+
+    // Only include property URLs that actually have images.
+    const entries: UrlEntry[] = published
+      .filter((p) => (imagesByProperty.get(p.id)?.length ?? 0) > 0)
+      .map((p) => ({
+        loc: `${domain}/annonce/${p.slug ?? p.id}`,
+        lastmod: p.updatedAt ? new Date(p.updatedAt).toISOString().split("T")[0] : today,
+        images: imagesByProperty.get(p.id) ?? [],
+      }));
+
+    sendXml(res, renderUrlset(entries, true));
+  } catch (err) {
+    req.log.error({ err }, "Failed to generate images sitemap");
     res.status(500).send("Internal Server Error");
   }
 });

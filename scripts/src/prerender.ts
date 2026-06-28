@@ -516,6 +516,28 @@ async function main(): Promise<void> {
       });
 
       writeHtml(distPublic, `/annonce/${property.slug ?? property.id}`, html);
+
+      // Legacy numeric-id URL: emit a redirect stub so non-JS crawlers and old
+      // backlinks resolve to the canonical slug (the static host cannot perform a
+      // DB-driven HTTP 301). Provides canonical + meta-refresh + JS fallback.
+      if (property.slug) {
+        const legacyHtml = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Redirection — ${escapeAttr(property.title)}</title>
+<link rel="canonical" href="${escapeAttr(canonical)}">
+<meta name="robots" content="noindex, follow">
+<meta http-equiv="refresh" content="0; url=${escapeAttr(canonical)}">
+<script>window.location.replace(${JSON.stringify(canonical)});</script>
+</head>
+<body>
+<p>Cette annonce a été déplacée. <a href="${escapeAttr(canonical)}">Cliquez ici si la redirection ne fonctionne pas</a>.</p>
+</body>
+</html>`;
+        writeHtml(distPublic, `/annonce/${property.id}`, legacyHtml);
+      }
+
       propertyCount++;
     }
 
