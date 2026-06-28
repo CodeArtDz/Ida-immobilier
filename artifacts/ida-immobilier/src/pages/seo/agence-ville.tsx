@@ -49,7 +49,7 @@ export default function AgenceVille({ slug }: { slug: string }) {
             { name: `Immobilier à ${city.name}`, url: `${SITE_URL}/immobilier-${city.slug}` },
             { name: `Agence à ${city.name}`, url },
           ]),
-          itemListJsonLd(properties.map((p) => `${SITE_URL}/annonce/${p.id}`)),
+          itemListJsonLd(properties.map((p) => `${SITE_URL}/annonce/${p.slug ?? p.id}`)),
         ]
       : null,
   );

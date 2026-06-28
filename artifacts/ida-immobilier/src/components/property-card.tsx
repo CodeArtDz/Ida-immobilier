@@ -135,7 +135,7 @@ export function PropertyCard({ property }: { property: Property }) {
       className="group bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md"
     >
       <Link
-        href={`/annonce/${property.id}`}
+        href={`/annonce/${property.slug ?? property.id}`}
         className="relative aspect-[4/3] overflow-hidden block"
       >
         <CardSlider
@@ -158,7 +158,7 @@ export function PropertyCard({ property }: { property: Property }) {
       <div className="p-5">
         <div className="flex justify-between items-start mb-1.5">
           <Link
-            href={`/annonce/${property.id}`}
+            href={`/annonce/${property.slug ?? property.id}`}
             className="font-serif text-lg font-semibold text-foreground line-clamp-1 hover:text-accent"
           >
             {property.title}

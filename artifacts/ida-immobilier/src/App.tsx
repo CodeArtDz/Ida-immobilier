@@ -79,7 +79,7 @@ function Router() {
       <Route path="/" component={() => <PublicRoute component={Home} />} />
       <Route path="/acheter" component={() => <PublicRoute component={Acheter} />} />
       <Route path="/louer" component={() => <PublicRoute component={Louer} />} />
-      <Route path="/annonce/:id" component={() => <PublicRoute component={Annonce} />} />
+      <Route path="/annonce/:slug" component={() => <PublicRoute component={Annonce} />} />
       <Route path="/estimation" component={() => <PublicRoute component={Estimation} />} />
       <Route path="/contact" component={() => <PublicRoute component={Contact} />} />
       <Route path="/nos-agences" component={() => <PublicRoute component={Agences} />} />

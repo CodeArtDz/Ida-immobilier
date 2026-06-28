@@ -61,7 +61,7 @@ export default function TypeVille({ type, slug }: { type: string; slug: string }
             { name: `${cap(plural)} à vendre`, url },
           ]),
           itemListJsonLd(
-            properties.map((p) => `${SITE_URL}/annonce/${p.id}`),
+            properties.map((p) => `${SITE_URL}/annonce/${p.slug ?? p.id}`),
             `${cap(plural)} à ${city.name}`,
           ),
         ]

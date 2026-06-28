@@ -105,7 +105,7 @@ router.get("/sitemap-properties.xml", async (req, res) => {
     const domain = domainOf();
     const today = new Date().toISOString().split("T")[0];
     const published = await db
-      .select({ id: propertiesTable.id, updatedAt: propertiesTable.updatedAt })
+      .select({ id: propertiesTable.id, slug: propertiesTable.slug, updatedAt: propertiesTable.updatedAt })
       .from(propertiesTable)
       .where(eq(propertiesTable.status, "published"));
 
@@ -136,7 +136,7 @@ router.get("/sitemap-properties.xml", async (req, res) => {
       res,
       renderUrlset(
         published.map((p) => ({
-          loc: `${domain}/annonce/${p.id}`,
+          loc: `${domain}/annonce/${p.slug ?? p.id}`,
           lastmod: p.updatedAt ? new Date(p.updatedAt).toISOString().split("T")[0] : today,
           changefreq: "weekly",
           priority: "0.8",

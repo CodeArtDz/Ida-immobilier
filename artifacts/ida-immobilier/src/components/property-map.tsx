@@ -157,7 +157,7 @@ export function PropertyMap({ properties }: PropertyMapProps) {
         <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-card border border-border rounded-xl shadow-2xl p-4 flex gap-4 items-center max-w-lg mx-auto">
           {/* Thumbnail */}
           <a
-            href={`/annonce/${selected.id}`}
+            href={`/annonce/${selected.slug ?? selected.id}`}
             className="w-24 h-20 rounded-lg overflow-hidden shrink-0 block"
           >
             <img
@@ -173,7 +173,7 @@ export function PropertyMap({ properties }: PropertyMapProps) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <a
-              href={`/annonce/${selected.id}`}
+              href={`/annonce/${selected.slug ?? selected.id}`}
               className="font-serif text-sm font-bold text-primary line-clamp-2 hover:underline block"
             >
               {selected.title}
@@ -198,7 +198,7 @@ export function PropertyMap({ properties }: PropertyMapProps) {
           {/* Actions */}
           <div className="flex flex-col gap-2 shrink-0">
             <a
-              href={`/annonce/${selected.id}`}
+              href={`/annonce/${selected.slug ?? selected.id}`}
               className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors text-center"
             >
               Voir le bien

@@ -381,6 +381,7 @@ async function main(): Promise<void> {
     const properties = await db
       .select({
         id: propertiesTable.id,
+        slug: propertiesTable.slug,
         title: propertiesTable.title,
         type: propertiesTable.type,
         city: propertiesTable.city,
@@ -430,7 +431,7 @@ async function main(): Promise<void> {
         property.metaDescription ??
         `${typeLabel}${property.livingArea ? ` de ${property.livingArea} m²` : ""}${property.rooms ? `, ${property.rooms} pièces` : ""}${property.bedrooms ? `, ${property.bedrooms} chambre${property.bedrooms > 1 ? "s" : ""}` : ""} à ${property.city} (${property.postalCode}).${price ? ` Prix\u00a0: ${formatPrice(price)}${rentalPrice ? "/mois" : ""}.` : ""} I.D.A Immobilier — agence immobilière de prestige en Provence.`;
 
-      const canonical = `${BASE_URL}/annonce/${property.id}`;
+      const canonical = `${BASE_URL}/annonce/${property.slug ?? property.id}`;
       const ogImage = mainImageUrl ?? DEFAULT_OG_IMAGE;
 
       const jsonLd: Record<string, unknown> = {
@@ -514,7 +515,7 @@ async function main(): Promise<void> {
         jsonLd,
       });
 
-      writeHtml(distPublic, `/annonce/${property.id}`, html);
+      writeHtml(distPublic, `/annonce/${property.slug ?? property.id}`, html);
       propertyCount++;
     }
 

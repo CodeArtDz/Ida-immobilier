@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useParams, Redirect } from "wouter";
 import { resolveStorageUrl } from "@/lib/storage-url";
 import {
   useGetProperty,
+  useGetPropertyBySlug,
   useGetSimilarProperties,
   useListPropertyMedia,
   getGetPropertyQueryKey,
+  getGetPropertyBySlugQueryKey,
   getGetSimilarPropertiesQueryKey,
   getListPropertyMediaQueryKey,
   useCreateAppointment,
@@ -446,8 +448,9 @@ function VisiteModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Annonce() {
-  const { id } = useParams();
-  const propertyId = parseInt(id || "0");
+  const { slug: routeParam } = useParams();
+  const isNumericId = /^\d+$/.test(routeParam ?? "");
+  const legacyId = isNumericId ? parseInt(routeParam ?? "0") : 0;
   const [showVisite, setShowVisite] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactSending, setContactSending] = useState(false);
@@ -460,12 +463,26 @@ export default function Annonce() {
   });
   const { toast } = useToast();
 
-  const { data: property, isLoading } = useGetProperty(propertyId, {
+  // Properties resolve by SEO slug; numeric IDs are legacy and redirect to the
+  // canonical slug URL once the record loads.
+  const { data: propertyById, isLoading: loadingById } = useGetProperty(legacyId, {
     query: {
-      enabled: !!propertyId,
-      queryKey: getGetPropertyQueryKey(propertyId),
+      enabled: isNumericId && !!legacyId,
+      queryKey: getGetPropertyQueryKey(legacyId),
     },
   });
+
+  const { data: propertyBySlug, isLoading: loadingBySlug } = useGetPropertyBySlug(routeParam ?? "", {
+    query: {
+      enabled: !isNumericId && !!routeParam,
+      queryKey: getGetPropertyBySlugQueryKey(routeParam ?? ""),
+    },
+  });
+
+  const property = isNumericId ? propertyById : propertyBySlug;
+  const isLoading = isNumericId ? loadingById : loadingBySlug;
+  const propertyId = property?.id ?? 0;
+  const canonicalSlug = property?.slug ?? routeParam ?? "";
 
   const { data: similarProperties } = useGetSimilarProperties(propertyId, {
     query: {
@@ -486,7 +503,7 @@ export default function Annonce() {
   useSeo({
     title: seoTitle,
     description: seoDesc,
-    canonical: `https://ida-immobilier.com/annonce/${propertyId}`,
+    canonical: `https://ida-immobilier.com/annonce/${canonicalSlug}`,
     ogType: "article",
     ogImage: property?.mainImageUrl ?? undefined,
   });
@@ -498,7 +515,7 @@ export default function Annonce() {
           "@type": "RealEstateListing",
           name: property.title,
           description: seoDesc,
-          url: `https://ida-immobilier.com/annonce/${propertyId}`,
+          url: `https://ida-immobilier.com/annonce/${canonicalSlug}`,
           ...(property.mainImageUrl ? { image: [property.mainImageUrl] } : {}),
           address: {
             "@type": "PostalAddress",
@@ -534,7 +551,7 @@ export default function Annonce() {
                 name: property.rentalPrice ? "Louer" : "Acheter",
                 item: property.rentalPrice ? "https://ida-immobilier.com/louer" : "https://ida-immobilier.com/acheter",
               },
-              { "@type": "ListItem", position: 3, name: property.title, item: `https://ida-immobilier.com/annonce/${propertyId}` },
+              { "@type": "ListItem", position: 3, name: property.title, item: `https://ida-immobilier.com/annonce/${canonicalSlug}` },
             ],
           },
         }
@@ -555,6 +572,11 @@ export default function Annonce() {
         Bien introuvable.
       </div>
     );
+  }
+
+  // Legacy numeric URL → 301-equivalent client redirect to the canonical slug.
+  if (isNumericId && property.slug) {
+    return <Redirect to={`/annonce/${property.slug}`} replace />;
   }
 
   const price = property.salePrice || property.rentalPrice;

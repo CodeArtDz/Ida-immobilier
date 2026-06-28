@@ -85,7 +85,7 @@ export default function Ville({ identifier }: { identifier: string }) {
           ]),
           faqJsonLd(faq),
           itemListJsonLd(
-            properties.map((p) => `${SITE_URL}/annonce/${p.id}`),
+            properties.map((p) => `${SITE_URL}/annonce/${p.slug ?? p.id}`),
             `Biens à ${city.name}`,
           ),
         ]
