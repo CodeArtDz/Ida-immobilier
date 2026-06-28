@@ -1,0 +1,544 @@
+# AUTOMATIC SEO ENGINE - IDA IMMOBILIER
+
+Build an enterprise-grade automatic SEO engine for the existing IDA Immobilier platform.
+
+Do NOT redesign the website.
+
+Do NOT modify the UI.
+
+Do NOT change the existing user experience.
+
+Your task is to create a fully automated SEO system that requires zero manual intervention after deployment.
+
+Everything must integrate with the existing Next.js application.
+
+The SEO system must update automatically whenever properties, agents, cities or content change.
+
+--------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------
+
+The website must become the reference for real estate searches around Marignane.
+
+Primary target:
+
+Marignane
+
+Secondary target:
+
+All cities within a 70 km radius including:
+
+Marseille
+Vitrolles
+Aix-en-Provence
+Les Pennes-Mirabeau
+Carry-le-Rouet
+Sausset-les-Pins
+Rognac
+Gignac-la-Nerthe
+Berre-l'Étang
+Châteauneuf-les-Martigues
+Martigues
+Saint-Victoret
+Cabriès
+Bouc-Bel-Air
+
+Architecture must support unlimited cities.
+
+--------------------------------------------------------
+AUTOMATIC PROPERTY SEO
+--------------------------------------------------------
+
+Whenever an Agent publishes a property:
+
+Automatically:
+
+• Generate SEO slug
+
+• Generate page title
+
+• Generate meta description
+
+• Generate canonical URL
+
+• Generate OpenGraph metadata
+
+• Generate Twitter metadata
+
+• Generate JSON-LD Schema.org
+
+• Generate breadcrumbs
+
+• Generate image alt texts
+
+• Generate image titles
+
+• Generate structured property data
+
+• Add the property to XML Sitemap
+
+• Add the property to Search Index
+
+• Revalidate affected pages
+
+No manual action required.
+
+--------------------------------------------------------
+AUTOMATIC CITY PAGES
+--------------------------------------------------------
+
+Whenever the first property is published in a city:
+
+Automatically generate:
+
+/immobilier-{city}
+
+/agence-immobiliere-{city}
+
+/estimation-immobiliere-{city}
+
+Example:
+
+/immobilier-marignane
+
+/immobilier-vitrolles
+
+/immobilier-marseille
+
+Each page should automatically display:
+
+Latest listings
+
+Average property price
+
+Average price per square meter
+
+Property statistics
+
+Nearby cities
+
+Nearby schools
+
+Transport
+
+Neighborhood information
+
+Buying guide
+
+Selling guide
+
+Agency contact
+
+Related properties
+
+Latest articles
+
+JSON-LD
+
+OpenGraph
+
+Breadcrumbs
+
+Canonical URL
+
+Automatically update whenever properties change.
+
+--------------------------------------------------------
+AUTOMATIC PROPERTY TYPE PAGES
+--------------------------------------------------------
+
+Generate pages dynamically.
+
+Examples:
+
+/maison-a-vendre-marignane
+
+/appartement-a-vendre-marseille
+
+/terrain-a-vendre-vitrolles
+
+/local-commercial-aix-en-provence
+
+Populate pages automatically using database content.
+
+--------------------------------------------------------
+AUTOMATIC POSTAL CODE PAGES
+--------------------------------------------------------
+
+Generate pages such as:
+
+/immobilier-13700
+
+/immobilier-13127
+
+/immobilier-13008
+
+Automatically maintain them.
+
+--------------------------------------------------------
+AGENT SEO
+--------------------------------------------------------
+
+Every Agent automatically gets:
+
+/agents/{slug}
+
+Display:
+
+Biography
+
+Photo
+
+Languages
+
+Specialties
+
+Published properties
+
+Sold properties
+
+Reviews
+
+Contact
+
+Schema.org Person
+
+Automatically update whenever:
+
+New property
+
+Property sold
+
+Review added
+
+--------------------------------------------------------
+AUTOMATIC INTERNAL LINKING
+--------------------------------------------------------
+
+Every property page automatically links to:
+
+Same city
+
+Nearby cities
+
+Same property type
+
+Same price range
+
+Same bedrooms
+
+Same features
+
+Assigned Agent
+
+Estimation page
+
+Agency page
+
+Blog articles
+
+No manual linking.
+
+--------------------------------------------------------
+SMART RELATED PROPERTIES
+--------------------------------------------------------
+
+Generate automatically using:
+
+City
+
+Price
+
+Surface
+
+Bedrooms
+
+Property type
+
+Features
+
+Display:
+
+6-12 related properties.
+
+--------------------------------------------------------
+IMAGE SEO
+--------------------------------------------------------
+
+Whenever media is uploaded:
+
+Automatically:
+
+Generate WebP
+
+Generate AVIF
+
+Compress images
+
+Generate descriptive filenames
+
+Generate ALT text
+
+Generate image titles
+
+Generate captions
+
+Example:
+
+Maison-4-chambres-marignane-piscine.webp
+
+Alt:
+
+Maison contemporaine avec piscine à Marignane
+
+--------------------------------------------------------
+AUTOMATIC XML SITEMAPS
+--------------------------------------------------------
+
+Maintain automatically:
+
+sitemap.xml
+
+properties.xml
+
+cities.xml
+
+agents.xml
+
+blog.xml
+
+images.xml
+
+Update whenever:
+
+Property created
+
+Property deleted
+
+Property archived
+
+City created
+
+Agent created
+
+Blog article published
+
+--------------------------------------------------------
+NEXT.JS CACHE
+--------------------------------------------------------
+
+Automatically revalidate:
+
+Property page
+
+Homepage
+
+City page
+
+Agent page
+
+Search pages
+
+Sitemaps
+
+No deployment required.
+
+--------------------------------------------------------
+CLIENT ALERTS
+--------------------------------------------------------
+
+Whenever a property is published:
+
+Compare against every client's saved searches.
+
+If matching:
+
+Create notification
+
+Send email (if enabled)
+
+Display in dashboard
+
+Examples:
+
+New matching property
+
+Price reduction
+
+Property back on market
+
+Status updated
+
+--------------------------------------------------------
+SEO DASHBOARD
+--------------------------------------------------------
+
+Create an SEO Dashboard for SuperAdmin and Admin.
+
+Display:
+
+Indexed pages
+
+Missing metadata
+
+Broken links
+
+Duplicate titles
+
+Duplicate descriptions
+
+404 pages
+
+Redirects
+
+Sitemap status
+
+Core Web Vitals
+
+Lighthouse score
+
+Google Search Console data
+
+Google Analytics data
+
+Top pages
+
+Top cities
+
+Top keywords
+
+Top properties
+
+Top agents
+
+Search impressions
+
+Clicks
+
+CTR
+
+Average ranking
+
+--------------------------------------------------------
+SCHEMA.ORG
+--------------------------------------------------------
+
+Automatically generate:
+
+Organization
+
+LocalBusiness
+
+RealEstateListing
+
+Residence
+
+Offer
+
+Place
+
+Person
+
+Review
+
+FAQ
+
+BreadcrumbList
+
+SearchAction
+
+--------------------------------------------------------
+TECHNICAL SEO
+--------------------------------------------------------
+
+Implement automatically:
+
+Canonical URLs
+
+Dynamic Metadata
+
+OpenGraph
+
+Twitter Cards
+
+Robots.txt
+
+Manifest
+
+Structured Data
+
+Lazy Loading
+
+Image Optimization
+
+Route Preloading
+
+Static Rendering where appropriate
+
+Incremental Static Regeneration
+
+Server Components
+
+Automatic Metadata API
+
+--------------------------------------------------------
+PERFORMANCE TARGETS
+--------------------------------------------------------
+
+Lighthouse:
+
+SEO: 100
+
+Performance: 95+
+
+Accessibility: 100
+
+Best Practices: 100
+
+Core Web Vitals:
+
+LCP < 2 seconds
+
+CLS < 0.1
+
+INP < 200ms
+
+--------------------------------------------------------
+GOOGLE INDEXING
+--------------------------------------------------------
+
+Whenever a property is published:
+
+Automatically:
+
+Update sitemap
+
+Ping search engines where appropriate
+
+Revalidate cache
+
+Update internal links
+
+Update city pages
+
+Update search pages
+
+Update related properties
+
+Everything should happen automatically.
+
+--------------------------------------------------------
+OUTPUT REQUIREMENTS
+--------------------------------------------------------
+
+Do not redesign the website.
+
+Do not modify existing UI.
+
+Only build the automatic SEO engine.
+
+Everything must integrate with the existing architecture.
+
+The SEO system must require zero manual work after deployment.
+
+The goal is for IDA Immobilier to become the dominant organic search result for real estate searches in Marignane and all surrounding cities through high-quality automated SEO, structured data, and continuously updated location-specific content.
