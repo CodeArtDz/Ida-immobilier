@@ -13,7 +13,7 @@ import { eq, and, desc, sql, ilike, gte, lte, count, inArray } from "drizzle-orm
 import { requireAuth, optionalAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { pingIndexNow } from "../lib/indexnow";
-import { notifySavedSearchMatches, notifyFavoriteChanges } from "../lib/property-matching";
+import { notifySavedSearchMatches, notifyPriceStatusChanges } from "../lib/property-matching";
 import { buildPropertySlug } from "@workspace/seo";
 import multer from "multer";
 import { applyWatermarkBuffer } from "../lib/watermark";
@@ -618,14 +618,15 @@ router.patch("/properties/:id", requireAuth, async (req, res) => {
     if (!updated) { res.status(404).json({ error: "Bien non trouvé" }); return; }
 
     // Best-effort, non-blocking match alerts. A transition into "published"
-    // (newly listed or back on the market) is matched against saved searches;
-    // price drops and status changes notify the property's favoriters.
+    // (newly listed or back on the market) is matched against saved searches as
+    // a "new property" alert; price drops and status changes notify both the
+    // property's favoriters and the owners of saved searches that still match it.
     const becamePublished = updated.status === "published" && before.status !== "published";
-    void notifyFavoriteChanges(before, updated);
     if (becamePublished) {
       const kind = before.status === "draft" ? "new_match" : "back_on_market";
       void notifySavedSearchMatches(updated, kind);
     }
+    void notifyPriceStatusChanges(before, updated);
 
     res.json({ ...updated, salePrice: updated.salePrice ? parseFloat(updated.salePrice) : null, rentalPrice: updated.rentalPrice ? parseFloat(updated.rentalPrice) : null, agentName: null, agentPhone: null, agentEmail: null, agentAvatarUrl: null, agencyName: null, mainImageUrl: null, mediaCount: 0 });
   } catch (err) {
@@ -646,11 +647,12 @@ router.patch("/properties/:id/publish", requireAuth, async (req, res) => {
     pingIndexNow([`/annonce/${updated.id}`]);
 
     // Best-effort, non-blocking match alerts when a property enters "published".
+    // notifyPriceStatusChanges self-gates (no-op when nothing meaningful changed).
     if (before.status !== "published") {
       const kind = before.status === "draft" ? "new_match" : "back_on_market";
       void notifySavedSearchMatches(updated, kind);
-      void notifyFavoriteChanges(before, updated);
     }
+    void notifyPriceStatusChanges(before, updated);
 
     await db.insert(activityLogsTable).values({
       type: "property_published",

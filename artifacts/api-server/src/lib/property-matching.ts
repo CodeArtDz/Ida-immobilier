@@ -167,40 +167,79 @@ export async function notifySavedSearchMatches(property: Property, kind: "new_ma
   }
 }
 
-// Price drop and/or status change on a property → notify the clients who
-// favorited it. Drives one notification per kind of change per favoriter, plus a
-// best-effort email.
-export async function notifyFavoriteChanges(before: Property, after: Property): Promise<void> {
+// Price drop and/or status change on a property → notify both the clients who
+// favorited it AND the owners of saved searches that still match it. Recipients
+// are unioned so a client who both favorited the property and has a matching
+// saved search receives only one notification per kind of change. A separate
+// "new_property_match" alert (notifySavedSearchMatches) covers transitions INTO
+// published, so the back-on-market status alert here only targets favoriters to
+// avoid duplicating that event for saved-search owners.
+export async function notifyPriceStatusChanges(before: Property, after: Property): Promise<void> {
   try {
     const beforePrice = propertyPrice(before);
     const afterPrice = propertyPrice(after);
     const priceDropped = beforePrice != null && afterPrice != null && afterPrice < beforePrice;
+    const becamePublished = after.status === "published" && before.status !== "published";
     const statusChanged = before.status !== after.status;
 
     if (!priceDropped && !statusChanged) return;
 
-    const favs = await db
+    // Favoriters of this property.
+    const favRows = await db
       .select({ userId: favoritesTable.userId })
       .from(favoritesTable)
       .where(eq(favoritesTable.propertyId, after.id));
-    if (favs.length === 0) return;
+    const favSet = new Set(favRows.map((f) => f.userId));
+
+    // Owners of saved searches that still match the property after the change.
+    // Only relevant for events saved-search owners should hear about: a price
+    // drop, or a status change that is NOT a transition into published (that is
+    // covered by the new_property_match alert instead).
+    const matchByUser = new Map<number, { alertEnabled: boolean; searchName: string | null }>();
+    if (priceDropped || (statusChanged && !becamePublished)) {
+      const searches = await db.select().from(savedSearchesTable);
+      for (const s of searches) {
+        if (!searchMatchesProperty(s, after)) continue;
+        const ex = matchByUser.get(s.userId);
+        if (!ex) matchByUser.set(s.userId, { alertEnabled: s.alertEnabled, searchName: s.name });
+        else if (s.alertEnabled && !ex.alertEnabled) {
+          ex.alertEnabled = true;
+          ex.searchName = s.name;
+        }
+      }
+    }
+
+    // Recipient sets per kind of change.
+    const priceRecipients = priceDropped ? new Set<number>([...favSet, ...matchByUser.keys()]) : new Set<number>();
+    const statusRecipients = statusChanged
+      ? (becamePublished ? new Set<number>(favSet) : new Set<number>([...favSet, ...matchByUser.keys()]))
+      : new Set<number>();
+
+    const allIds = new Set<number>([...priceRecipients, ...statusRecipients]);
+    if (allIds.size === 0) return;
 
     const statusLabel = STATUS_LABEL[after.status] ?? after.status;
-    const users = await getUsers(favs.map((f) => f.userId));
+    const users = await getUsers([...allIds]);
+    let notified = 0;
 
-    for (const { userId } of favs) {
+    for (const userId of allIds) {
       try {
         const user = users.get(userId);
+        const searchInfo = matchByUser.get(userId);
+        // Favoriters are always emailed (no per-favorite toggle); saved-search
+        // matchers are emailed only when their search has alerts enabled.
+        const emailAllowed = favSet.has(userId) || Boolean(searchInfo?.alertEnabled);
 
-        if (priceDropped) {
+        if (priceRecipients.has(userId)) {
           await db.insert(notificationsTable).values({
             userId,
             type: "price_change",
-            title: "Baisse de prix sur un bien favori",
+            title: "Baisse de prix sur un bien",
             body: `${after.title} — ${after.city}`,
             propertyId: after.id,
           });
-          if (user && user.isActive) {
+          notified++;
+          if (emailAllowed && user && user.isActive) {
             await sendPropertyAlertEmail({
               to: user.email,
               clientName: `${user.firstName} ${user.lastName}`,
@@ -211,20 +250,22 @@ export async function notifyFavoriteChanges(before: Property, after: Property): 
               price: afterPrice,
               oldPrice: beforePrice,
               statusLabel,
+              savedSearchName: searchInfo?.searchName ?? null,
             });
           }
         }
 
-        if (statusChanged) {
+        if (statusRecipients.has(userId)) {
           const backOnMarket = after.status === "published" && before.status !== "published" && before.status !== "draft";
           await db.insert(notificationsTable).values({
             userId,
             type: "status_change",
-            title: backOnMarket ? "Un bien favori est de nouveau disponible" : "Statut mis à jour sur un bien favori",
+            title: backOnMarket ? "Un bien est de nouveau disponible" : "Statut mis à jour sur un bien",
             body: `${after.title} — ${statusLabel}`,
             propertyId: after.id,
           });
-          if (user && user.isActive) {
+          notified++;
+          if (emailAllowed && user && user.isActive) {
             await sendPropertyAlertEmail({
               to: user.email,
               clientName: `${user.firstName} ${user.lastName}`,
@@ -234,16 +275,17 @@ export async function notifyFavoriteChanges(before: Property, after: Property): 
               propertyCity: after.city,
               price: afterPrice,
               statusLabel,
+              savedSearchName: searchInfo?.searchName ?? null,
             });
           }
         }
       } catch (err) {
-        logger.error({ err, userId, propertyId: after.id }, "Favorite change notification failed for user");
+        logger.error({ err, userId, propertyId: after.id }, "Price/status notification failed for user");
       }
     }
 
-    logger.info({ propertyId: after.id, favoriters: favs.length, priceDropped, statusChanged }, "Favorite change notifications processed");
+    logger.info({ propertyId: after.id, recipients: allIds.size, notified, priceDropped, statusChanged }, "Price/status change notifications processed");
   } catch (err) {
-    logger.error({ err, propertyId: after.id }, "notifyFavoriteChanges failed");
+    logger.error({ err, propertyId: after.id }, "notifyPriceStatusChanges failed");
   }
 }
