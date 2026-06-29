@@ -579,6 +579,14 @@ export interface Article {
   /** @nullable */
   coverImageUrl?: string | null;
   /** @nullable */
+  coverImageWebpUrl?: string | null;
+  /** @nullable */
+  coverImageAvifUrl?: string | null;
+  /** @nullable */
+  coverImageWidth?: number | null;
+  /** @nullable */
+  coverImageHeight?: number | null;
+  /** @nullable */
   coverImageAlt?: string | null;
   tags?: string[];
   /** @nullable */
@@ -623,7 +631,16 @@ export interface ArticleInput {
   slug?: string;
   excerpt?: string;
   body?: string;
-  coverImageUrl?: string;
+  /** @nullable */
+  coverImageUrl?: string | null;
+  /** @nullable */
+  coverImageWebpUrl?: string | null;
+  /** @nullable */
+  coverImageAvifUrl?: string | null;
+  /** @nullable */
+  coverImageWidth?: number | null;
+  /** @nullable */
+  coverImageHeight?: number | null;
   coverImageAlt?: string;
   tags?: string[];
   /** @nullable */
@@ -631,6 +648,8 @@ export interface ArticleInput {
   metaTitle?: string;
   metaDescription?: string;
   status?: ArticleInputStatus;
+  /** @nullable */
+  publishedAt?: string | null;
 }
 
 export type ArticleUpdateStatus = typeof ArticleUpdateStatus[keyof typeof ArticleUpdateStatus];
@@ -649,6 +668,14 @@ export interface ArticleUpdate {
   /** @nullable */
   coverImageUrl?: string | null;
   /** @nullable */
+  coverImageWebpUrl?: string | null;
+  /** @nullable */
+  coverImageAvifUrl?: string | null;
+  /** @nullable */
+  coverImageWidth?: number | null;
+  /** @nullable */
+  coverImageHeight?: number | null;
+  /** @nullable */
   coverImageAlt?: string | null;
   tags?: string[];
   /** @nullable */
@@ -656,6 +683,8 @@ export interface ArticleUpdate {
   metaTitle?: string;
   metaDescription?: string;
   status?: ArticleUpdateStatus;
+  /** @nullable */
+  publishedAt?: string | null;
 }
 
 export type PropertyMediaType = typeof PropertyMediaType[keyof typeof PropertyMediaType];

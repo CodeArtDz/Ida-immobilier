@@ -1,13 +1,31 @@
 import { Router } from "express";
+import multer from "multer";
 import { db, articlesTable, citiesTable, usersTable } from "@workspace/db";
 import { eq, and, desc, sql, count, type SQL } from "drizzle-orm";
 import { slugify } from "@workspace/seo";
 import { requireAuth, requireRole, optionalAuth } from "../lib/auth";
+import { getStorageService } from "../lib/storage";
+import { generateImageVariants } from "../lib/image-variants";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
+const storage = getStorageService();
+const coverUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+});
+
 const STAFF_ROLES = ["superadmin", "admin", "agency_manager", "agent"];
+
+// Parse an optional ISO date string from request bodies; returns undefined when
+// the field is absent and null when explicitly cleared.
+function parsePublishedAt(value: unknown): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  const d = new Date(value as string);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
 
 function isStaff(req: import("express").Request): boolean {
   const user = (req as any).user;
@@ -34,6 +52,10 @@ function shapeArticle(row: {
     excerpt: a.excerpt,
     body: a.body,
     coverImageUrl: a.coverImageUrl,
+    coverImageWebpUrl: a.coverImageWebpUrl,
+    coverImageAvifUrl: a.coverImageAvifUrl,
+    coverImageWidth: a.coverImageWidth,
+    coverImageHeight: a.coverImageHeight,
     coverImageAlt: a.coverImageAlt,
     tags: a.tags ? a.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
     cityId: a.cityId,
@@ -175,6 +197,61 @@ router.get("/articles/:id", optionalAuth, async (req, res) => {
   }
 });
 
+// ─── POST /articles/cover-upload ──────────────────────────────────────────────
+// Uploads an article cover and runs it through the image-SEO pipeline (WebP +
+// AVIF variants + intrinsic dimensions). No watermark — covers are editorial.
+router.post(
+  "/articles/cover-upload",
+  requireAuth,
+  requireRole(...STAFF_ROLES),
+  coverUpload.single("file"),
+  async (req, res) => {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) {
+        res.status(400).json({ error: "Aucun fichier fourni" });
+        return;
+      }
+      if (!file.mimetype.startsWith("image/")) {
+        res.status(400).json({ error: "Le fichier doit être une image" });
+        return;
+      }
+
+      const stored = await storage.uploadBuffer(file.buffer, file.mimetype);
+      const coverImageUrl = storage.toPublicUrl(stored);
+
+      let coverImageWebpUrl: string | null = null;
+      let coverImageAvifUrl: string | null = null;
+      let coverImageWidth: number | null = null;
+      let coverImageHeight: number | null = null;
+      try {
+        const variants = await generateImageVariants(file.buffer);
+        const [webpStored, avifStored] = await Promise.all([
+          storage.uploadBuffer(variants.webp, "image/webp"),
+          storage.uploadBuffer(variants.avif, "image/avif"),
+        ]);
+        coverImageWebpUrl = storage.toPublicUrl(webpStored);
+        coverImageAvifUrl = storage.toPublicUrl(avifStored);
+        coverImageWidth = variants.width;
+        coverImageHeight = variants.height;
+      } catch (variantErr) {
+        req.log.warn({ err: variantErr }, "Cover variant generation failed; serving original only");
+      }
+
+      res.status(201).json({
+        coverImageUrl,
+        coverImageWebpUrl,
+        coverImageAvifUrl,
+        coverImageWidth,
+        coverImageHeight,
+      });
+    } catch (err) {
+      req.log.error({ err }, "Article cover upload error");
+      res.status(500).json({ error: "Échec du téléversement" });
+    }
+  },
+);
+
 // ─── POST /articles ───────────────────────────────────────────────────────────
 router.post(
   "/articles",
@@ -195,6 +272,12 @@ router.post(
         : "";
       const user = (req as any).user;
 
+      const explicitPublishedAt = parsePublishedAt(body.publishedAt);
+      const publishedAt =
+        status === "published"
+          ? (explicitPublishedAt ?? new Date())
+          : (explicitPublishedAt ?? null);
+
       const [created] = await db
         .insert(articlesTable)
         .values({
@@ -203,6 +286,10 @@ router.post(
           excerpt: body.excerpt ?? null,
           body: body.body ?? "",
           coverImageUrl: body.coverImageUrl ?? null,
+          coverImageWebpUrl: body.coverImageWebpUrl ?? null,
+          coverImageAvifUrl: body.coverImageAvifUrl ?? null,
+          coverImageWidth: body.coverImageWidth ?? null,
+          coverImageHeight: body.coverImageHeight ?? null,
           coverImageAlt: body.coverImageAlt ?? null,
           tags,
           cityId: body.cityId ?? null,
@@ -210,7 +297,7 @@ router.post(
           metaDescription: body.metaDescription ?? null,
           authorId: user?.id ?? null,
           status,
-          publishedAt: status === "published" ? new Date() : null,
+          publishedAt,
         })
         .returning();
 
@@ -250,6 +337,10 @@ router.patch(
       if ("excerpt" in body) updates.excerpt = body.excerpt ?? null;
       if ("body" in body) updates.body = body.body ?? "";
       if ("coverImageUrl" in body) updates.coverImageUrl = body.coverImageUrl ?? null;
+      if ("coverImageWebpUrl" in body) updates.coverImageWebpUrl = body.coverImageWebpUrl ?? null;
+      if ("coverImageAvifUrl" in body) updates.coverImageAvifUrl = body.coverImageAvifUrl ?? null;
+      if ("coverImageWidth" in body) updates.coverImageWidth = body.coverImageWidth ?? null;
+      if ("coverImageHeight" in body) updates.coverImageHeight = body.coverImageHeight ?? null;
       if ("coverImageAlt" in body) updates.coverImageAlt = body.coverImageAlt ?? null;
       if (Array.isArray(body.tags)) {
         updates.tags = body.tags.map((t: string) => t.trim()).filter(Boolean).join(",");
@@ -264,6 +355,15 @@ router.patch(
         }
         if (body.status === "draft") {
           updates.publishedAt = null;
+        }
+      }
+      // Explicit publish-date override (applies regardless of status transition,
+      // as long as the resulting/existing status is published).
+      const explicitPublishedAt = parsePublishedAt(body.publishedAt);
+      if (explicitPublishedAt !== undefined) {
+        const effectiveStatus = updates.status ?? existing.status;
+        if (effectiveStatus === "published") {
+          updates.publishedAt = explicitPublishedAt;
         }
       }
       updates.updatedAt = new Date();

@@ -16,12 +16,19 @@ function toPayload(values: ArticleFormValues) {
     excerpt: values.excerpt || undefined,
     body: values.body || undefined,
     coverImageUrl: values.coverImageUrl || undefined,
+    coverImageWebpUrl: values.coverImageWebpUrl || undefined,
+    coverImageAvifUrl: values.coverImageAvifUrl || undefined,
+    coverImageWidth: values.coverImageWidth ?? undefined,
+    coverImageHeight: values.coverImageHeight ?? undefined,
     coverImageAlt: values.coverImageAlt || undefined,
     tags,
     cityId: values.cityId ? Number(values.cityId) : null,
     metaTitle: values.metaTitle || undefined,
     metaDescription: values.metaDescription || undefined,
     status: values.status,
+    publishedAt: values.publishedAt
+      ? new Date(values.publishedAt).toISOString()
+      : undefined,
   };
 }
 

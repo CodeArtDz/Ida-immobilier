@@ -15,6 +15,11 @@ export const articlesTable = pgTable("articles", {
   // Rich body (HTML / markdown produced by the admin editor).
   body: text("body").notNull().default(""),
   coverImageUrl: text("cover_image_url"),
+  // Modern responsive variants generated at upload time (image SEO + CWV).
+  coverImageWebpUrl: text("cover_image_webp_url"),
+  coverImageAvifUrl: text("cover_image_avif_url"),
+  coverImageWidth: integer("cover_image_width"),
+  coverImageHeight: integer("cover_image_height"),
   coverImageAlt: text("cover_image_alt"),
   // Comma-separated tags for lightweight topical grouping.
   tags: text("tags").notNull().default(""),

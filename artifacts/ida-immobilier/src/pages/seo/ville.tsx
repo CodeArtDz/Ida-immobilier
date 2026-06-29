@@ -17,6 +17,7 @@ import {
   PROPERTY_TYPE_FR,
 } from "@workspace/seo";
 import { PropertyCard } from "@/components/property-card";
+import { ResponsivePicture } from "@/components/responsive-picture";
 import { Button } from "@/components/ui/button";
 import { Newspaper } from "lucide-react";
 import { resolveStorageUrl } from "@/lib/storage-url";
@@ -221,8 +222,14 @@ export default function Ville({ identifier }: { identifier: string }) {
                     <article className="group bg-card border border-border rounded-xl overflow-hidden h-full flex flex-col cursor-pointer transition-shadow hover:shadow-lg">
                       <div className="aspect-[16/10] bg-muted overflow-hidden">
                         {cover ? (
-                          <img
-                            src={cover}
+                          <ResponsivePicture
+                            media={{
+                              url: cover,
+                              webpUrl: resolveStorageUrl(a.coverImageWebpUrl) || null,
+                              avifUrl: resolveStorageUrl(a.coverImageAvifUrl) || null,
+                              width: a.coverImageWidth,
+                              height: a.coverImageHeight,
+                            }}
                             alt={a.coverImageAlt ?? a.title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             loading="lazy"

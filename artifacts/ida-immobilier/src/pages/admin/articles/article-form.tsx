@@ -20,12 +20,17 @@ export interface ArticleFormValues {
   excerpt: string;
   body: string;
   coverImageUrl: string;
+  coverImageWebpUrl: string;
+  coverImageAvifUrl: string;
+  coverImageWidth: number | null;
+  coverImageHeight: number | null;
   coverImageAlt: string;
   tags: string;
   cityId: string;
   metaTitle: string;
   metaDescription: string;
   status: "draft" | "published";
+  publishedAt: string;
 }
 
 export const EMPTY_ARTICLE: ArticleFormValues = {
@@ -34,12 +39,17 @@ export const EMPTY_ARTICLE: ArticleFormValues = {
   excerpt: "",
   body: "",
   coverImageUrl: "",
+  coverImageWebpUrl: "",
+  coverImageAvifUrl: "",
+  coverImageWidth: null,
+  coverImageHeight: null,
   coverImageAlt: "",
   tags: "",
   cityId: "",
   metaTitle: "",
   metaDescription: "",
   status: "draft",
+  publishedAt: "",
 };
 
 const NO_CITY = "__none__";
@@ -78,16 +88,23 @@ export function ArticleForm({
     try {
       const body = new FormData();
       body.append("file", file);
-      const res = await fetch("/api/storage/uploads", {
+      const res = await fetch("/api/articles/cover-upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` },
         body,
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || "Échec du téléversement.");
-      const url = json.objectPath ?? json.url ?? json.publicUrl;
+      const url = json.coverImageUrl;
       if (!url) throw new Error("Réponse du serveur invalide.");
-      onChange({ ...values, coverImageUrl: url });
+      onChange({
+        ...values,
+        coverImageUrl: url,
+        coverImageWebpUrl: json.coverImageWebpUrl ?? "",
+        coverImageAvifUrl: json.coverImageAvifUrl ?? "",
+        coverImageWidth: json.coverImageWidth ?? null,
+        coverImageHeight: json.coverImageHeight ?? null,
+      });
       toast({ title: "Image téléversée" });
     } catch (err) {
       toast({
@@ -177,7 +194,16 @@ export function ArticleForm({
               variant="destructive"
               size="icon"
               className="absolute top-2 right-2"
-              onClick={() => set("coverImageUrl", "")}
+              onClick={() =>
+                onChange({
+                  ...values,
+                  coverImageUrl: "",
+                  coverImageWebpUrl: "",
+                  coverImageAvifUrl: "",
+                  coverImageWidth: null,
+                  coverImageHeight: null,
+                })
+              }
             >
               <X className="w-4 h-4" />
             </Button>
@@ -266,6 +292,17 @@ export function ArticleForm({
                 <SelectItem value="published">Publié</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Date de publication</label>
+            <Input
+              type="datetime-local"
+              value={values.publishedAt}
+              onChange={(e) => set("publishedAt", e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Laissez vide pour utiliser la date de publication automatique.
+            </p>
           </div>
         </div>
       </section>

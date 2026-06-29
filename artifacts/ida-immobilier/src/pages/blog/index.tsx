@@ -5,6 +5,7 @@ import { resolveStorageUrl } from "@/lib/storage-url";
 import { useSeo } from "@/hooks/use-seo";
 import { useJsonLd } from "@/hooks/use-json-ld";
 import { Breadcrumbs } from "@/components/seo/seo-blocks";
+import { ResponsivePicture } from "@/components/responsive-picture";
 import { SITE_URL } from "@/lib/seo-content";
 import { Newspaper } from "lucide-react";
 
@@ -71,8 +72,14 @@ export default function BlogIndex() {
                   <article className="group bg-card border border-border rounded-xl overflow-hidden h-full flex flex-col cursor-pointer transition-shadow hover:shadow-lg">
                     <div className="aspect-[16/10] bg-muted overflow-hidden">
                       {cover ? (
-                        <img
-                          src={cover}
+                        <ResponsivePicture
+                          media={{
+                            url: cover,
+                            webpUrl: resolveStorageUrl(article.coverImageWebpUrl) || null,
+                            avifUrl: resolveStorageUrl(article.coverImageAvifUrl) || null,
+                            width: article.coverImageWidth,
+                            height: article.coverImageHeight,
+                          }}
                           alt={article.coverImageAlt ?? article.title}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           loading="lazy"

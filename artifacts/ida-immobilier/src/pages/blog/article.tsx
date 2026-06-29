@@ -7,6 +7,7 @@ import { resolveStorageUrl } from "@/lib/storage-url";
 import { useSeo } from "@/hooks/use-seo";
 import { useJsonLd } from "@/hooks/use-json-ld";
 import { Breadcrumbs } from "@/components/seo/seo-blocks";
+import { ResponsivePicture } from "@/components/responsive-picture";
 import { ORG, SITE_URL } from "@/lib/seo-content";
 import NotFound from "@/pages/not-found";
 
@@ -120,10 +121,17 @@ export default function BlogArticle({ slug }: { slug: string }) {
         </header>
 
         {cover && (
-          <img
-            src={cover}
+          <ResponsivePicture
+            media={{
+              url: cover,
+              webpUrl: resolveStorageUrl(article.coverImageWebpUrl) || null,
+              avifUrl: resolveStorageUrl(article.coverImageAvifUrl) || null,
+              width: article.coverImageWidth,
+              height: article.coverImageHeight,
+            }}
             alt={article.coverImageAlt ?? article.title}
             className="w-full rounded-xl border border-border"
+            loading="eager"
           />
         )}
 

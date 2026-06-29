@@ -17,6 +17,14 @@ export interface Article {
   /** @nullable */
   coverImageUrl?: string | null;
   /** @nullable */
+  coverImageWebpUrl?: string | null;
+  /** @nullable */
+  coverImageAvifUrl?: string | null;
+  /** @nullable */
+  coverImageWidth?: number | null;
+  /** @nullable */
+  coverImageHeight?: number | null;
+  /** @nullable */
   coverImageAlt?: string | null;
   tags?: string[];
   /** @nullable */

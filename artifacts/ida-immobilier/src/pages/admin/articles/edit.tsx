@@ -16,13 +16,30 @@ function toUpdatePayload(values: ArticleFormValues) {
     excerpt: values.excerpt,
     body: values.body,
     coverImageUrl: values.coverImageUrl || null,
+    coverImageWebpUrl: values.coverImageWebpUrl || null,
+    coverImageAvifUrl: values.coverImageAvifUrl || null,
+    coverImageWidth: values.coverImageWidth ?? null,
+    coverImageHeight: values.coverImageHeight ?? null,
     coverImageAlt: values.coverImageAlt || null,
     tags,
     cityId: values.cityId ? Number(values.cityId) : null,
     metaTitle: values.metaTitle,
     metaDescription: values.metaDescription,
     status: values.status,
+    publishedAt: values.publishedAt
+      ? new Date(values.publishedAt).toISOString()
+      : null,
   };
+}
+
+// Convert an ISO date-time to the `datetime-local` input format (local time,
+// no seconds/zone): YYYY-MM-DDTHH:mm.
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function EditArticle() {
@@ -44,12 +61,17 @@ export default function EditArticle() {
         excerpt: article.excerpt ?? "",
         body: article.body,
         coverImageUrl: article.coverImageUrl ?? "",
+        coverImageWebpUrl: article.coverImageWebpUrl ?? "",
+        coverImageAvifUrl: article.coverImageAvifUrl ?? "",
+        coverImageWidth: article.coverImageWidth ?? null,
+        coverImageHeight: article.coverImageHeight ?? null,
         coverImageAlt: article.coverImageAlt ?? "",
         tags: (article.tags ?? []).join(", "),
         cityId: article.cityId != null ? String(article.cityId) : "",
         metaTitle: article.metaTitle ?? "",
         metaDescription: article.metaDescription ?? "",
         status: article.status === "published" ? "published" : "draft",
+        publishedAt: toLocalInput(article.publishedAt),
       });
     }
   }, [article]);

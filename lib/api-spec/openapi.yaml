@@ -2444,6 +2444,14 @@ components:
           type: string
         coverImageUrl:
           type: ["string", "null"]
+        coverImageWebpUrl:
+          type: ["string", "null"]
+        coverImageAvifUrl:
+          type: ["string", "null"]
+        coverImageWidth:
+          type: ["integer", "null"]
+        coverImageHeight:
+          type: ["integer", "null"]
         coverImageAlt:
           type: ["string", "null"]
         tags:
@@ -2505,7 +2513,15 @@ components:
         body:
           type: string
         coverImageUrl:
-          type: string
+          type: ["string", "null"]
+        coverImageWebpUrl:
+          type: ["string", "null"]
+        coverImageAvifUrl:
+          type: ["string", "null"]
+        coverImageWidth:
+          type: ["integer", "null"]
+        coverImageHeight:
+          type: ["integer", "null"]
         coverImageAlt:
           type: string
         tags:
@@ -2521,6 +2537,9 @@ components:
         status:
           type: string
           enum: [draft, published]
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
 
     ArticleUpdate:
       type: object
@@ -2535,6 +2554,14 @@ components:
           type: string
         coverImageUrl:
           type: ["string", "null"]
+        coverImageWebpUrl:
+          type: ["string", "null"]
+        coverImageAvifUrl:
+          type: ["string", "null"]
+        coverImageWidth:
+          type: ["integer", "null"]
+        coverImageHeight:
+          type: ["integer", "null"]
         coverImageAlt:
           type: ["string", "null"]
         tags:
@@ -2550,6 +2577,9 @@ components:
         status:
           type: string
           enum: [draft, published]
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
 
     # PROPERTY MEDIA
     PropertyMedia:
