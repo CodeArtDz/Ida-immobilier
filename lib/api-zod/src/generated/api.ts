@@ -1096,6 +1096,236 @@ export const GetCityDetailResponse = zod.object({
 
 
 /**
+ * @summary List articles with filters
+ */
+export const ListArticlesQueryParams = zod.object({
+  "status": zod.enum(['draft', 'published']).optional(),
+  "cityId": zod.coerce.number().optional(),
+  "tag": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListArticlesResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "body": zod.string(),
+  "coverImageUrl": zod.string().nullish(),
+  "coverImageAlt": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "cityName": zod.string().nullish(),
+  "citySlug": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().nullish()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
+})
+
+
+/**
+ * @summary Create an article
+ */
+export const CreateArticleBody = zod.object({
+  "title": zod.string(),
+  "slug": zod.string().optional(),
+  "excerpt": zod.string().optional(),
+  "body": zod.string().optional(),
+  "coverImageUrl": zod.string().optional(),
+  "coverImageAlt": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "metaTitle": zod.string().optional(),
+  "metaDescription": zod.string().optional(),
+  "status": zod.enum(['draft', 'published']).optional()
+})
+
+
+/**
+ * @summary Get a published article by its slug
+ */
+export const GetArticleBySlugParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetArticleBySlugResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "body": zod.string(),
+  "coverImageUrl": zod.string().nullish(),
+  "coverImageAlt": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "cityName": zod.string().nullish(),
+  "citySlug": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Get article by ID
+ */
+export const GetArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetArticleResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "body": zod.string(),
+  "coverImageUrl": zod.string().nullish(),
+  "coverImageAlt": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "cityName": zod.string().nullish(),
+  "citySlug": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Update an article
+ */
+export const UpdateArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateArticleBody = zod.object({
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "excerpt": zod.string().optional(),
+  "body": zod.string().optional(),
+  "coverImageUrl": zod.string().nullish(),
+  "coverImageAlt": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "metaTitle": zod.string().optional(),
+  "metaDescription": zod.string().optional(),
+  "status": zod.enum(['draft', 'published']).optional()
+})
+
+export const UpdateArticleResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "body": zod.string(),
+  "coverImageUrl": zod.string().nullish(),
+  "coverImageAlt": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "cityName": zod.string().nullish(),
+  "citySlug": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Delete an article
+ */
+export const DeleteArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Publish an article
+ */
+export const PublishArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PublishArticleResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "body": zod.string(),
+  "coverImageUrl": zod.string().nullish(),
+  "coverImageAlt": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "cityName": zod.string().nullish(),
+  "citySlug": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Unpublish an article
+ */
+export const UnpublishArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UnpublishArticleResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "body": zod.string(),
+  "coverImageUrl": zod.string().nullish(),
+  "coverImageAlt": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "cityId": zod.number().nullish(),
+  "cityName": zod.string().nullish(),
+  "citySlug": zod.string().nullish(),
+  "metaTitle": zod.string().nullish(),
+  "metaDescription": zod.string().nullish(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().nullish()
+})
+
+
+/**
  * @summary Get a public agent profile with their active listings count
  */
 export const GetAgentProfileParams = zod.object({

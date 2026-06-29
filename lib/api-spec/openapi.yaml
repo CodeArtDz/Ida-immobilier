@@ -22,6 +22,7 @@ tags:
   - name: analytics
   - name: media
   - name: storage
+  - name: articles
 paths:
   /healthz:
     get:
@@ -552,6 +553,179 @@ paths:
                 $ref: "#/components/schemas/CityDetail"
         "404":
           description: Not found
+
+  # ARTICLES (BLOG)
+  /articles:
+    get:
+      operationId: listArticles
+      tags: [articles]
+      summary: List articles with filters
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, published]
+        - in: query
+          name: cityId
+          schema:
+            type: integer
+        - in: query
+          name: tag
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of articles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleListResponse"
+    post:
+      operationId: createArticle
+      tags: [articles]
+      summary: Create an article
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+
+  /articles/slug/{slug}:
+    get:
+      operationId: getArticleBySlug
+      tags: [articles]
+      summary: Get a published article by its slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "404":
+          description: Not found
+
+  /articles/{id}:
+    get:
+      operationId: getArticle
+      tags: [articles]
+      summary: Get article by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateArticle
+      tags: [articles]
+      summary: Update an article
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+    delete:
+      operationId: deleteArticle
+      tags: [articles]
+      summary: Delete an article
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /articles/{id}/publish:
+    patch:
+      operationId: publishArticle
+      tags: [articles]
+      summary: Publish an article
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+
+  /articles/{id}/unpublish:
+    patch:
+      operationId: unpublishArticle
+      tags: [articles]
+      summary: Unpublish an article
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unpublished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
 
   # AGENTS
   /agents/{slug}:
@@ -2252,6 +2426,130 @@ components:
           type: integer
         value:
           type: ["number", "null"]
+
+    # ARTICLES (BLOG)
+    Article:
+      type: object
+      required: [id, slug, title, status, body, createdAt]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        excerpt:
+          type: ["string", "null"]
+        body:
+          type: string
+        coverImageUrl:
+          type: ["string", "null"]
+        coverImageAlt:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        cityId:
+          type: ["integer", "null"]
+        cityName:
+          type: ["string", "null"]
+        citySlug:
+          type: ["string", "null"]
+        metaTitle:
+          type: ["string", "null"]
+        metaDescription:
+          type: ["string", "null"]
+        authorId:
+          type: ["integer", "null"]
+        authorName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, published]
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    ArticleListResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Article"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    ArticleInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        excerpt:
+          type: string
+        body:
+          type: string
+        coverImageUrl:
+          type: string
+        coverImageAlt:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        cityId:
+          type: ["integer", "null"]
+        metaTitle:
+          type: string
+        metaDescription:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+
+    ArticleUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        excerpt:
+          type: string
+        body:
+          type: string
+        coverImageUrl:
+          type: ["string", "null"]
+        coverImageAlt:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        cityId:
+          type: ["integer", "null"]
+        metaTitle:
+          type: string
+        metaDescription:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
 
     # PROPERTY MEDIA
     PropertyMedia:

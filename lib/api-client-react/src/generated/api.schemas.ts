@@ -561,6 +561,103 @@ export interface PropertyStats {
   byCity: StatGroup[];
 }
 
+export type ArticleStatus = typeof ArticleStatus[keyof typeof ArticleStatus];
+
+
+export const ArticleStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface Article {
+  id: number;
+  slug: string;
+  title: string;
+  /** @nullable */
+  excerpt?: string | null;
+  body: string;
+  /** @nullable */
+  coverImageUrl?: string | null;
+  /** @nullable */
+  coverImageAlt?: string | null;
+  tags?: string[];
+  /** @nullable */
+  cityId?: number | null;
+  /** @nullable */
+  cityName?: string | null;
+  /** @nullable */
+  citySlug?: string | null;
+  /** @nullable */
+  metaTitle?: string | null;
+  /** @nullable */
+  metaDescription?: string | null;
+  /** @nullable */
+  authorId?: number | null;
+  /** @nullable */
+  authorName?: string | null;
+  status: ArticleStatus;
+  /** @nullable */
+  publishedAt?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface ArticleListResponse {
+  data: Article[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type ArticleInputStatus = typeof ArticleInputStatus[keyof typeof ArticleInputStatus];
+
+
+export const ArticleInputStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface ArticleInput {
+  title: string;
+  slug?: string;
+  excerpt?: string;
+  body?: string;
+  coverImageUrl?: string;
+  coverImageAlt?: string;
+  tags?: string[];
+  /** @nullable */
+  cityId?: number | null;
+  metaTitle?: string;
+  metaDescription?: string;
+  status?: ArticleInputStatus;
+}
+
+export type ArticleUpdateStatus = typeof ArticleUpdateStatus[keyof typeof ArticleUpdateStatus];
+
+
+export const ArticleUpdateStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface ArticleUpdate {
+  title?: string;
+  slug?: string;
+  excerpt?: string;
+  body?: string;
+  /** @nullable */
+  coverImageUrl?: string | null;
+  /** @nullable */
+  coverImageAlt?: string | null;
+  tags?: string[];
+  /** @nullable */
+  cityId?: number | null;
+  metaTitle?: string;
+  metaDescription?: string;
+  status?: ArticleUpdateStatus;
+}
+
 export type PropertyMediaType = typeof PropertyMediaType[keyof typeof PropertyMediaType];
 
 
@@ -1170,6 +1267,23 @@ export type GetAreaStatsTransaction = typeof GetAreaStatsTransaction[keyof typeo
 export const GetAreaStatsTransaction = {
   sale: 'sale',
   rent: 'rent',
+} as const;
+
+export type ListArticlesParams = {
+status?: ListArticlesStatus;
+cityId?: number;
+tag?: string;
+search?: string;
+page?: number;
+limit?: number;
+};
+
+export type ListArticlesStatus = typeof ListArticlesStatus[keyof typeof ListArticlesStatus];
+
+
+export const ListArticlesStatus = {
+  draft: 'draft',
+  published: 'published',
 } as const;
 
 export type ListUsersParams = {
