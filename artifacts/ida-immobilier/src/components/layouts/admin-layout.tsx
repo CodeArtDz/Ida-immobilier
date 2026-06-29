@@ -15,6 +15,7 @@ import {
   UsersRound,
   CircleUser,
   Newspaper,
+  Search,
   Menu,
   X
 } from "lucide-react";
@@ -44,7 +45,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   if (user?.role === 'superadmin' || user?.role === 'admin') {
     navigation.push(
       { name: 'Agences', href: '/tableau-de-bord/agences', icon: Building2 },
-      { name: 'Personnel', href: '/tableau-de-bord/utilisateurs', icon: UserCog }
+      { name: 'Personnel', href: '/tableau-de-bord/utilisateurs', icon: UserCog },
+      { name: 'SEO & Analytics', href: '/tableau-de-bord/seo', icon: Search }
     );
   }
 

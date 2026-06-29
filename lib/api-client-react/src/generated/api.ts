@@ -26,6 +26,7 @@ import type {
   AgencyStats,
   AgencyUpdate,
   AgentProfile,
+  AnalyticsData,
   Appointment,
   AppointmentInput,
   AppointmentUpdate,
@@ -46,7 +47,11 @@ import type {
   EstimationUpdate,
   Favorite,
   FavoriteInput,
+  GetAnalyticsDataParams,
   GetAreaStatsParams,
+  GetPageSpeedParams,
+  GetSearchConsoleDataParams,
+  GoogleSeoStatus,
   HealthStatus,
   Lead,
   LeadInput,
@@ -63,6 +68,7 @@ import type {
   Message,
   MessageInput,
   Notification,
+  PageSpeedResult,
   Property,
   PropertyAssignmentInput,
   PropertyInput,
@@ -74,6 +80,8 @@ import type {
   RegisterInput,
   SavedSearch,
   SavedSearchInput,
+  SearchConsoleData,
+  SeoAudit,
   UploadUrlRequest,
   UploadUrlResponse,
   User,
@@ -5978,6 +5986,412 @@ export function useGetCityStats<TData = Awaited<ReturnType<typeof getCityStats>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCityStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSeoAuditUrl = () => {
+
+
+
+
+  return `/api/seo/audit`
+}
+
+/**
+ * @summary Internal SEO health audit (metadata, duplicates, structural links, sitemap)
+ */
+export const getSeoAudit = async ( options?: RequestInit): Promise<SeoAudit> => {
+
+  return customFetch<SeoAudit>(getGetSeoAuditUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSeoAuditQueryKey = () => {
+    return [
+    `/api/seo/audit`
+    ] as const;
+    }
+
+
+export const getGetSeoAuditQueryOptions = <TData = Awaited<ReturnType<typeof getSeoAudit>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeoAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSeoAuditQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSeoAudit>>> = ({ signal }) => getSeoAudit({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSeoAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSeoAuditQueryResult = NonNullable<Awaited<ReturnType<typeof getSeoAudit>>>
+export type GetSeoAuditQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Internal SEO health audit (metadata, duplicates, structural links, sitemap)
+ */
+
+export function useGetSeoAudit<TData = Awaited<ReturnType<typeof getSeoAudit>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeoAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSeoAuditQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetGoogleSeoStatusUrl = () => {
+
+
+
+
+  return `/api/seo/google/status`
+}
+
+/**
+ * @summary Google integration connection status (Search Console, Analytics, PageSpeed)
+ */
+export const getGoogleSeoStatus = async ( options?: RequestInit): Promise<GoogleSeoStatus> => {
+
+  return customFetch<GoogleSeoStatus>(getGetGoogleSeoStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGoogleSeoStatusQueryKey = () => {
+    return [
+    `/api/seo/google/status`
+    ] as const;
+    }
+
+
+export const getGetGoogleSeoStatusQueryOptions = <TData = Awaited<ReturnType<typeof getGoogleSeoStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGoogleSeoStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGoogleSeoStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGoogleSeoStatus>>> = ({ signal }) => getGoogleSeoStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGoogleSeoStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGoogleSeoStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getGoogleSeoStatus>>>
+export type GetGoogleSeoStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Google integration connection status (Search Console, Analytics, PageSpeed)
+ */
+
+export function useGetGoogleSeoStatus<TData = Awaited<ReturnType<typeof getGoogleSeoStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGoogleSeoStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGoogleSeoStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSearchConsoleDataUrl = (params?: GetSearchConsoleDataParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/seo/google/search-console?${stringifiedParams}` : `/api/seo/google/search-console`
+}
+
+/**
+ * @summary Live Google Search Console performance data
+ */
+export const getSearchConsoleData = async (params?: GetSearchConsoleDataParams, options?: RequestInit): Promise<SearchConsoleData> => {
+
+  return customFetch<SearchConsoleData>(getGetSearchConsoleDataUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSearchConsoleDataQueryKey = (params?: GetSearchConsoleDataParams,) => {
+    return [
+    `/api/seo/google/search-console`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSearchConsoleDataQueryOptions = <TData = Awaited<ReturnType<typeof getSearchConsoleData>>, TError = ErrorType<unknown>>(params?: GetSearchConsoleDataParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSearchConsoleData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSearchConsoleDataQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSearchConsoleData>>> = ({ signal }) => getSearchConsoleData(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSearchConsoleData>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSearchConsoleDataQueryResult = NonNullable<Awaited<ReturnType<typeof getSearchConsoleData>>>
+export type GetSearchConsoleDataQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Live Google Search Console performance data
+ */
+
+export function useGetSearchConsoleData<TData = Awaited<ReturnType<typeof getSearchConsoleData>>, TError = ErrorType<unknown>>(
+ params?: GetSearchConsoleDataParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSearchConsoleData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSearchConsoleDataQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAnalyticsDataUrl = (params?: GetAnalyticsDataParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/seo/google/analytics?${stringifiedParams}` : `/api/seo/google/analytics`
+}
+
+/**
+ * @summary Live Google Analytics (GA4) data
+ */
+export const getAnalyticsData = async (params?: GetAnalyticsDataParams, options?: RequestInit): Promise<AnalyticsData> => {
+
+  return customFetch<AnalyticsData>(getGetAnalyticsDataUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAnalyticsDataQueryKey = (params?: GetAnalyticsDataParams,) => {
+    return [
+    `/api/seo/google/analytics`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAnalyticsDataQueryOptions = <TData = Awaited<ReturnType<typeof getAnalyticsData>>, TError = ErrorType<unknown>>(params?: GetAnalyticsDataParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnalyticsDataQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalyticsData>>> = ({ signal }) => getAnalyticsData(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsData>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAnalyticsDataQueryResult = NonNullable<Awaited<ReturnType<typeof getAnalyticsData>>>
+export type GetAnalyticsDataQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Live Google Analytics (GA4) data
+ */
+
+export function useGetAnalyticsData<TData = Awaited<ReturnType<typeof getAnalyticsData>>, TError = ErrorType<unknown>>(
+ params?: GetAnalyticsDataParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAnalyticsDataQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPageSpeedUrl = (params: GetPageSpeedParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/seo/google/pagespeed?${stringifiedParams}` : `/api/seo/google/pagespeed`
+}
+
+/**
+ * @summary PageSpeed Insights / CrUX Core Web Vitals for a key page template
+ */
+export const getPageSpeed = async (params: GetPageSpeedParams, options?: RequestInit): Promise<PageSpeedResult> => {
+
+  return customFetch<PageSpeedResult>(getGetPageSpeedUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPageSpeedQueryKey = (params?: GetPageSpeedParams,) => {
+    return [
+    `/api/seo/google/pagespeed`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPageSpeedQueryOptions = <TData = Awaited<ReturnType<typeof getPageSpeed>>, TError = ErrorType<unknown>>(params: GetPageSpeedParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPageSpeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPageSpeedQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPageSpeed>>> = ({ signal }) => getPageSpeed(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPageSpeed>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPageSpeedQueryResult = NonNullable<Awaited<ReturnType<typeof getPageSpeed>>>
+export type GetPageSpeedQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary PageSpeed Insights / CrUX Core Web Vitals for a key page template
+ */
+
+export function useGetPageSpeed<TData = Awaited<ReturnType<typeof getPageSpeed>>, TError = ErrorType<unknown>>(
+ params: GetPageSpeedParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPageSpeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPageSpeedQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

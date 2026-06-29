@@ -5,6 +5,204 @@
  * I.D.A Immobilier API
  * OpenAPI spec version: 0.1.0
  */
+export interface SeoAuditIssueItem {
+  type: string;
+  id: number;
+  label: string;
+  url: string;
+  /** @nullable */
+  detail?: string | null;
+}
+
+export interface SeoAuditDuplicate {
+  value: string;
+  count: number;
+  items: SeoAuditIssueItem[];
+}
+
+export interface SeoSitemapChild {
+  name: string;
+  url: string;
+  urlCount: number;
+  ok: boolean;
+}
+
+export interface SeoAuditPages {
+  known: number;
+  properties: number;
+  articles: number;
+  cities: number;
+  agents: number;
+  staticPages: number;
+}
+
+export interface SeoAuditSitemap {
+  ok: boolean;
+  url: string;
+  totalUrls: number;
+  children: SeoSitemapChild[];
+}
+
+export interface SeoAuditSummary {
+  totalIssues: number;
+  score: number;
+}
+
+export interface SeoAudit {
+  pages: SeoAuditPages;
+  missingTitle: SeoAuditIssueItem[];
+  missingDescription: SeoAuditIssueItem[];
+  duplicateTitles: SeoAuditDuplicate[];
+  duplicateDescriptions: SeoAuditDuplicate[];
+  brokenLinks: SeoAuditIssueItem[];
+  sitemap: SeoAuditSitemap;
+  summary: SeoAuditSummary;
+}
+
+export type GoogleSeoStatusSearchConsole = {
+  connected: boolean;
+  /** @nullable */
+  siteUrl?: string | null;
+};
+
+export type GoogleSeoStatusAnalytics = {
+  connected: boolean;
+  /** @nullable */
+  propertyId?: string | null;
+};
+
+export type GoogleSeoStatusPageSpeed = {
+  available: boolean;
+};
+
+export interface GoogleSeoStatus {
+  configured: boolean;
+  searchConsole: GoogleSeoStatusSearchConsole;
+  analytics: GoogleSeoStatusAnalytics;
+  pageSpeed: GoogleSeoStatusPageSpeed;
+}
+
+export interface SearchConsoleTotals {
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+export interface SearchConsoleDatePoint {
+  date: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+export interface SearchConsoleRow {
+  key: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+export type SearchConsoleDataRange = {
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+};
+
+export interface SearchConsoleData {
+  connected: boolean;
+  /** @nullable */
+  error?: string | null;
+  range?: SearchConsoleDataRange;
+  totals: SearchConsoleTotals;
+  byDate: SearchConsoleDatePoint[];
+  topPages: SearchConsoleRow[];
+  topQueries: SearchConsoleRow[];
+}
+
+export interface AnalyticsTotals {
+  users: number;
+  sessions: number;
+  pageViews: number;
+  engagementRate: number;
+  avgEngagementTime: number;
+}
+
+export interface AnalyticsDatePoint {
+  date: string;
+  users: number;
+  sessions: number;
+}
+
+export interface AnalyticsPageRow {
+  path: string;
+  views: number;
+}
+
+export interface AnalyticsCityRow {
+  city: string;
+  users: number;
+}
+
+export type AnalyticsDataRange = {
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+};
+
+export interface AnalyticsData {
+  connected: boolean;
+  /** @nullable */
+  error?: string | null;
+  range?: AnalyticsDataRange;
+  totals: AnalyticsTotals;
+  byDate: AnalyticsDatePoint[];
+  topPages: AnalyticsPageRow[];
+  topCities: AnalyticsCityRow[];
+}
+
+export interface PageSpeedScores {
+  /** @nullable */
+  performance?: number | null;
+  /** @nullable */
+  seo?: number | null;
+  /** @nullable */
+  accessibility?: number | null;
+  /** @nullable */
+  bestPractices?: number | null;
+}
+
+export interface PageSpeedCoreWebVitals {
+  /** @nullable */
+  lcp?: number | null;
+  /** @nullable */
+  cls?: number | null;
+  /** @nullable */
+  inp?: number | null;
+  /** @nullable */
+  fcp?: number | null;
+  /** @nullable */
+  ttfb?: number | null;
+}
+
+export interface PageSpeedResult {
+  available: boolean;
+  template: string;
+  strategy: string;
+  /** @nullable */
+  url?: string | null;
+  /** @nullable */
+  error?: string | null;
+  /** @nullable */
+  source?: string | null;
+  scores: PageSpeedScores;
+  coreWebVitals: PageSpeedCoreWebVitals;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -1363,4 +1561,36 @@ unread?: boolean;
 export type MarkConversationRead200 = {
   ok: boolean;
 };
+
+export type GetSearchConsoleDataParams = {
+days?: number;
+};
+
+export type GetAnalyticsDataParams = {
+days?: number;
+};
+
+export type GetPageSpeedParams = {
+template: GetPageSpeedTemplate;
+strategy?: GetPageSpeedStrategy;
+};
+
+export type GetPageSpeedTemplate = typeof GetPageSpeedTemplate[keyof typeof GetPageSpeedTemplate];
+
+
+export const GetPageSpeedTemplate = {
+  home: 'home',
+  search: 'search',
+  property: 'property',
+  city: 'city',
+  blog: 'blog',
+} as const;
+
+export type GetPageSpeedStrategy = typeof GetPageSpeedStrategy[keyof typeof GetPageSpeedStrategy];
+
+
+export const GetPageSpeedStrategy = {
+  mobile: 'mobile',
+  desktop: 'desktop',
+} as const;
 

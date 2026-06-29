@@ -50,6 +50,7 @@ import AdminMessages from "@/pages/admin/messages";
 import AdminAgences from "@/pages/admin/agences";
 import AdminUtilisateurs from "@/pages/admin/utilisateurs";
 import AdminCRM from "@/pages/admin/crm";
+import AdminSeo from "@/pages/admin/seo";
 import AdminProfil from "@/pages/admin/profil";
 
 const queryClient = new QueryClient();
@@ -124,6 +125,7 @@ function Router() {
       <Route path="/tableau-de-bord/crm" component={() => <ProtectedRoute component={AdminCRM} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager']} />} />
       <Route path="/tableau-de-bord/agences" component={() => <ProtectedRoute component={AdminAgences} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
       <Route path="/tableau-de-bord/utilisateurs" component={() => <ProtectedRoute component={AdminUtilisateurs} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
+      <Route path="/tableau-de-bord/seo" component={() => <ProtectedRoute component={AdminSeo} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
       <Route path="/tableau-de-bord/profil" component={() => <ProtectedRoute component={AdminProfil} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
 
       <Route path="/blog" component={() => <PublicRoute component={BlogIndex} />} />

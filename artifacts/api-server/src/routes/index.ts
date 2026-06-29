@@ -16,6 +16,7 @@ import contactRouter from "./contact";
 import storageRouter from "./storage";
 import sitemapRouter from "./sitemap";
 import seoRouter from "./seo";
+import seoDashboardRouter from "./seo_dashboard";
 import articlesRouter from "./articles";
 
 const router: IRouter = Router();
@@ -26,6 +27,7 @@ router.use(storageRouter);
 router.use(authRouter);
 router.use(propertiesRouter);
 router.use(seoRouter);
+router.use(seoDashboardRouter);
 router.use(articlesRouter);
 router.use(agenciesRouter);
 router.use(usersRouter);

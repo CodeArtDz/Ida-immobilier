@@ -1646,8 +1646,317 @@ paths:
                 items:
                   $ref: "#/components/schemas/CityStats"
 
+  # SEO DASHBOARD
+  /seo/audit:
+    get:
+      operationId: getSeoAudit
+      tags: [analytics]
+      summary: Internal SEO health audit (metadata, duplicates, structural links, sitemap)
+      responses:
+        "200":
+          description: SEO audit report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoAudit"
+
+  /seo/google/status:
+    get:
+      operationId: getGoogleSeoStatus
+      tags: [analytics]
+      summary: Google integration connection status (Search Console, Analytics, PageSpeed)
+      responses:
+        "200":
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleSeoStatus"
+
+  /seo/google/search-console:
+    get:
+      operationId: getSearchConsoleData
+      tags: [analytics]
+      summary: Live Google Search Console performance data
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Search Console data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchConsoleData"
+
+  /seo/google/analytics:
+    get:
+      operationId: getAnalyticsData
+      tags: [analytics]
+      summary: Live Google Analytics (GA4) data
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsData"
+
+  /seo/google/pagespeed:
+    get:
+      operationId: getPageSpeed
+      tags: [analytics]
+      summary: PageSpeed Insights / CrUX Core Web Vitals for a key page template
+      parameters:
+        - in: query
+          name: template
+          required: true
+          schema:
+            type: string
+            enum: [home, search, property, city, blog]
+        - in: query
+          name: strategy
+          schema:
+            type: string
+            enum: [mobile, desktop]
+      responses:
+        "200":
+          description: PageSpeed result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageSpeedResult"
+
 components:
   schemas:
+    SeoAuditIssueItem:
+      type: object
+      required: [type, id, label, url]
+      properties:
+        type: { type: string }
+        id: { type: integer }
+        label: { type: string }
+        url: { type: string }
+        detail: { type: ["string", "null"] }
+    SeoAuditDuplicate:
+      type: object
+      required: [value, count, items]
+      properties:
+        value: { type: string }
+        count: { type: integer }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeoAuditIssueItem"
+    SeoSitemapChild:
+      type: object
+      required: [name, url, urlCount, ok]
+      properties:
+        name: { type: string }
+        url: { type: string }
+        urlCount: { type: integer }
+        ok: { type: boolean }
+    SeoAuditPages:
+      type: object
+      required: [known, properties, articles, cities, agents, staticPages]
+      properties:
+        known: { type: integer }
+        properties: { type: integer }
+        articles: { type: integer }
+        cities: { type: integer }
+        agents: { type: integer }
+        staticPages: { type: integer }
+    SeoAuditSitemap:
+      type: object
+      required: [ok, url, totalUrls, children]
+      properties:
+        ok: { type: boolean }
+        url: { type: string }
+        totalUrls: { type: integer }
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeoSitemapChild"
+    SeoAuditSummary:
+      type: object
+      required: [totalIssues, score]
+      properties:
+        totalIssues: { type: integer }
+        score: { type: integer }
+    SeoAudit:
+      type: object
+      required: [pages, missingTitle, missingDescription, duplicateTitles, duplicateDescriptions, brokenLinks, sitemap, summary]
+      properties:
+        pages: { $ref: "#/components/schemas/SeoAuditPages" }
+        missingTitle:
+          type: array
+          items: { $ref: "#/components/schemas/SeoAuditIssueItem" }
+        missingDescription:
+          type: array
+          items: { $ref: "#/components/schemas/SeoAuditIssueItem" }
+        duplicateTitles:
+          type: array
+          items: { $ref: "#/components/schemas/SeoAuditDuplicate" }
+        duplicateDescriptions:
+          type: array
+          items: { $ref: "#/components/schemas/SeoAuditDuplicate" }
+        brokenLinks:
+          type: array
+          items: { $ref: "#/components/schemas/SeoAuditIssueItem" }
+        sitemap: { $ref: "#/components/schemas/SeoAuditSitemap" }
+        summary: { $ref: "#/components/schemas/SeoAuditSummary" }
+    GoogleSeoStatus:
+      type: object
+      required: [configured, searchConsole, analytics, pageSpeed]
+      properties:
+        configured: { type: boolean }
+        searchConsole:
+          type: object
+          required: [connected]
+          properties:
+            connected: { type: boolean }
+            siteUrl: { type: ["string", "null"] }
+        analytics:
+          type: object
+          required: [connected]
+          properties:
+            connected: { type: boolean }
+            propertyId: { type: ["string", "null"] }
+        pageSpeed:
+          type: object
+          required: [available]
+          properties:
+            available: { type: boolean }
+    SearchConsoleTotals:
+      type: object
+      required: [clicks, impressions, ctr, position]
+      properties:
+        clicks: { type: number }
+        impressions: { type: number }
+        ctr: { type: number }
+        position: { type: number }
+    SearchConsoleDatePoint:
+      type: object
+      required: [date, clicks, impressions, ctr, position]
+      properties:
+        date: { type: string }
+        clicks: { type: number }
+        impressions: { type: number }
+        ctr: { type: number }
+        position: { type: number }
+    SearchConsoleRow:
+      type: object
+      required: [key, clicks, impressions, ctr, position]
+      properties:
+        key: { type: string }
+        clicks: { type: number }
+        impressions: { type: number }
+        ctr: { type: number }
+        position: { type: number }
+    SearchConsoleData:
+      type: object
+      required: [connected, totals, byDate, topPages, topQueries]
+      properties:
+        connected: { type: boolean }
+        error: { type: ["string", "null"] }
+        range:
+          type: object
+          properties:
+            startDate: { type: ["string", "null"] }
+            endDate: { type: ["string", "null"] }
+        totals: { $ref: "#/components/schemas/SearchConsoleTotals" }
+        byDate:
+          type: array
+          items: { $ref: "#/components/schemas/SearchConsoleDatePoint" }
+        topPages:
+          type: array
+          items: { $ref: "#/components/schemas/SearchConsoleRow" }
+        topQueries:
+          type: array
+          items: { $ref: "#/components/schemas/SearchConsoleRow" }
+    AnalyticsTotals:
+      type: object
+      required: [users, sessions, pageViews, engagementRate, avgEngagementTime]
+      properties:
+        users: { type: integer }
+        sessions: { type: integer }
+        pageViews: { type: integer }
+        engagementRate: { type: number }
+        avgEngagementTime: { type: number }
+    AnalyticsDatePoint:
+      type: object
+      required: [date, users, sessions]
+      properties:
+        date: { type: string }
+        users: { type: integer }
+        sessions: { type: integer }
+    AnalyticsPageRow:
+      type: object
+      required: [path, views]
+      properties:
+        path: { type: string }
+        views: { type: integer }
+    AnalyticsCityRow:
+      type: object
+      required: [city, users]
+      properties:
+        city: { type: string }
+        users: { type: integer }
+    AnalyticsData:
+      type: object
+      required: [connected, totals, byDate, topPages, topCities]
+      properties:
+        connected: { type: boolean }
+        error: { type: ["string", "null"] }
+        range:
+          type: object
+          properties:
+            startDate: { type: ["string", "null"] }
+            endDate: { type: ["string", "null"] }
+        totals: { $ref: "#/components/schemas/AnalyticsTotals" }
+        byDate:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsDatePoint" }
+        topPages:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsPageRow" }
+        topCities:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsCityRow" }
+    PageSpeedScores:
+      type: object
+      properties:
+        performance: { type: ["number", "null"] }
+        seo: { type: ["number", "null"] }
+        accessibility: { type: ["number", "null"] }
+        bestPractices: { type: ["number", "null"] }
+    PageSpeedCoreWebVitals:
+      type: object
+      properties:
+        lcp: { type: ["number", "null"] }
+        cls: { type: ["number", "null"] }
+        inp: { type: ["number", "null"] }
+        fcp: { type: ["number", "null"] }
+        ttfb: { type: ["number", "null"] }
+    PageSpeedResult:
+      type: object
+      required: [available, template, strategy, scores, coreWebVitals]
+      properties:
+        available: { type: boolean }
+        template: { type: string }
+        strategy: { type: string }
+        url: { type: ["string", "null"] }
+        error: { type: ["string", "null"] }
+        source: { type: ["string", "null"] }
+        scores: { $ref: "#/components/schemas/PageSpeedScores" }
+        coreWebVitals: { $ref: "#/components/schemas/PageSpeedCoreWebVitals" }
     HealthStatus:
       type: object
       required: [status]

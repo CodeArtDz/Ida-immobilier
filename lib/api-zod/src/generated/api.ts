@@ -2424,3 +2424,207 @@ export const GetCityStatsResponseItem = zod.object({
 export const GetCityStatsResponse = zod.array(GetCityStatsResponseItem)
 
 
+/**
+ * @summary Internal SEO health audit (metadata, duplicates, structural links, sitemap)
+ */
+export const GetSeoAuditResponse = zod.object({
+  "pages": zod.object({
+  "known": zod.number(),
+  "properties": zod.number(),
+  "articles": zod.number(),
+  "cities": zod.number(),
+  "agents": zod.number(),
+  "staticPages": zod.number()
+}),
+  "missingTitle": zod.array(zod.object({
+  "type": zod.string(),
+  "id": zod.number(),
+  "label": zod.string(),
+  "url": zod.string(),
+  "detail": zod.string().nullish()
+})),
+  "missingDescription": zod.array(zod.object({
+  "type": zod.string(),
+  "id": zod.number(),
+  "label": zod.string(),
+  "url": zod.string(),
+  "detail": zod.string().nullish()
+})),
+  "duplicateTitles": zod.array(zod.object({
+  "value": zod.string(),
+  "count": zod.number(),
+  "items": zod.array(zod.object({
+  "type": zod.string(),
+  "id": zod.number(),
+  "label": zod.string(),
+  "url": zod.string(),
+  "detail": zod.string().nullish()
+}))
+})),
+  "duplicateDescriptions": zod.array(zod.object({
+  "value": zod.string(),
+  "count": zod.number(),
+  "items": zod.array(zod.object({
+  "type": zod.string(),
+  "id": zod.number(),
+  "label": zod.string(),
+  "url": zod.string(),
+  "detail": zod.string().nullish()
+}))
+})),
+  "brokenLinks": zod.array(zod.object({
+  "type": zod.string(),
+  "id": zod.number(),
+  "label": zod.string(),
+  "url": zod.string(),
+  "detail": zod.string().nullish()
+})),
+  "sitemap": zod.object({
+  "ok": zod.boolean(),
+  "url": zod.string(),
+  "totalUrls": zod.number(),
+  "children": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "urlCount": zod.number(),
+  "ok": zod.boolean()
+}))
+}),
+  "summary": zod.object({
+  "totalIssues": zod.number(),
+  "score": zod.number()
+})
+})
+
+
+/**
+ * @summary Google integration connection status (Search Console, Analytics, PageSpeed)
+ */
+export const GetGoogleSeoStatusResponse = zod.object({
+  "configured": zod.boolean(),
+  "searchConsole": zod.object({
+  "connected": zod.boolean(),
+  "siteUrl": zod.string().nullish()
+}),
+  "analytics": zod.object({
+  "connected": zod.boolean(),
+  "propertyId": zod.string().nullish()
+}),
+  "pageSpeed": zod.object({
+  "available": zod.boolean()
+})
+})
+
+
+/**
+ * @summary Live Google Search Console performance data
+ */
+export const GetSearchConsoleDataQueryParams = zod.object({
+  "days": zod.coerce.number().optional()
+})
+
+export const GetSearchConsoleDataResponse = zod.object({
+  "connected": zod.boolean(),
+  "error": zod.string().nullish(),
+  "range": zod.object({
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish()
+}).optional(),
+  "totals": zod.object({
+  "clicks": zod.number(),
+  "impressions": zod.number(),
+  "ctr": zod.number(),
+  "position": zod.number()
+}),
+  "byDate": zod.array(zod.object({
+  "date": zod.string(),
+  "clicks": zod.number(),
+  "impressions": zod.number(),
+  "ctr": zod.number(),
+  "position": zod.number()
+})),
+  "topPages": zod.array(zod.object({
+  "key": zod.string(),
+  "clicks": zod.number(),
+  "impressions": zod.number(),
+  "ctr": zod.number(),
+  "position": zod.number()
+})),
+  "topQueries": zod.array(zod.object({
+  "key": zod.string(),
+  "clicks": zod.number(),
+  "impressions": zod.number(),
+  "ctr": zod.number(),
+  "position": zod.number()
+}))
+})
+
+
+/**
+ * @summary Live Google Analytics (GA4) data
+ */
+export const GetAnalyticsDataQueryParams = zod.object({
+  "days": zod.coerce.number().optional()
+})
+
+export const GetAnalyticsDataResponse = zod.object({
+  "connected": zod.boolean(),
+  "error": zod.string().nullish(),
+  "range": zod.object({
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish()
+}).optional(),
+  "totals": zod.object({
+  "users": zod.number(),
+  "sessions": zod.number(),
+  "pageViews": zod.number(),
+  "engagementRate": zod.number(),
+  "avgEngagementTime": zod.number()
+}),
+  "byDate": zod.array(zod.object({
+  "date": zod.string(),
+  "users": zod.number(),
+  "sessions": zod.number()
+})),
+  "topPages": zod.array(zod.object({
+  "path": zod.string(),
+  "views": zod.number()
+})),
+  "topCities": zod.array(zod.object({
+  "city": zod.string(),
+  "users": zod.number()
+}))
+})
+
+
+/**
+ * @summary PageSpeed Insights / CrUX Core Web Vitals for a key page template
+ */
+export const GetPageSpeedQueryParams = zod.object({
+  "template": zod.enum(['home', 'search', 'property', 'city', 'blog']),
+  "strategy": zod.enum(['mobile', 'desktop']).optional()
+})
+
+export const GetPageSpeedResponse = zod.object({
+  "available": zod.boolean(),
+  "template": zod.string(),
+  "strategy": zod.string(),
+  "url": zod.string().nullish(),
+  "error": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "scores": zod.object({
+  "performance": zod.number().nullish(),
+  "seo": zod.number().nullish(),
+  "accessibility": zod.number().nullish(),
+  "bestPractices": zod.number().nullish()
+}),
+  "coreWebVitals": zod.object({
+  "lcp": zod.number().nullish(),
+  "cls": zod.number().nullish(),
+  "inp": zod.number().nullish(),
+  "fcp": zod.number().nullish(),
+  "ttfb": zod.number().nullish()
+})
+})
+
+
