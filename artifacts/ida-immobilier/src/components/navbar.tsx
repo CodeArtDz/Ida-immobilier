@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/louer", label: "LOUER" },
   { href: "/programmes-neufs", label: "PROGRAMMES NEUFS" },
   { href: "/estimation", label: "ESTIMATION" },
+  { href: "/blog", label: "BLOG" },
   { href: "/contact", label: "CONTACT" },
   { href: "/a-propos", label: "À PROPOS" },
 ];

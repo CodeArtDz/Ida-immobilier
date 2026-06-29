@@ -168,6 +168,22 @@ const STATIC_ROUTES: RouteConfig[] = [
       ],
     },
   },
+  {
+    path: "/blog",
+    title: "Blog immobilier — Conseils & actualités | I.D.A Immobilier",
+    description:
+      "Découvrez les conseils, guides et actualités immobilières de I.D.A Immobilier : achat, vente, location, estimation et marché de la Provence.",
+    canonical: `${BASE_URL}/blog`,
+    ogType: "website",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: `${BASE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
+      ],
+    },
+  },
   // ─── Legal pages — noindex ──────────────────────────────────────────────────
   {
     path: "/mentions-legales",
@@ -692,6 +708,86 @@ async function main(): Promise<void> {
       seoCount++;
     }
     console.log(`[prerender] SEO pages done (${seoCount}).`);
+
+    // ── Blog article pages (index is prerendered as a static route above) ──────
+    const { articlesTable } = await import("@workspace/db");
+    const blogUrl = `${BASE_URL}/blog`;
+    let blogCount = 0;
+    const articles = await db
+      .select({
+        slug: articlesTable.slug,
+        title: articlesTable.title,
+        excerpt: articlesTable.excerpt,
+        coverImageUrl: articlesTable.coverImageUrl,
+        metaTitle: articlesTable.metaTitle,
+        metaDescription: articlesTable.metaDescription,
+        publishedAt: articlesTable.publishedAt,
+        updatedAt: articlesTable.updatedAt,
+      })
+      .from(articlesTable)
+      .where(eqOp(articlesTable.status, "published"));
+
+    for (const article of articles) {
+      const canonical = `${BASE_URL}/blog/${article.slug}`;
+      const title = `${article.metaTitle ?? article.title}${SUFFIX}`;
+      const description =
+        article.metaDescription ??
+        article.excerpt ??
+        `${article.title} — Blog I.D.A Immobilier, conseils et actualités immobilières en Provence.`;
+      const ogImage = article.coverImageUrl
+        ? article.coverImageUrl.startsWith("http")
+          ? article.coverImageUrl
+          : `${BASE_URL}${article.coverImageUrl.startsWith("/") ? "" : "/"}${article.coverImageUrl}`
+        : DEFAULT_OG_IMAGE;
+
+      const jsonLd: Record<string, unknown> = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: article.title,
+        description,
+        url: canonical,
+        ...(article.coverImageUrl ? { image: [ogImage] } : {}),
+        ...(article.publishedAt
+          ? { datePublished: new Date(article.publishedAt).toISOString() }
+          : {}),
+        ...(article.updatedAt
+          ? { dateModified: new Date(article.updatedAt).toISOString() }
+          : {}),
+        publisher: {
+          "@type": "Organization",
+          name: "I.D.A Immobilier",
+          logo: { "@type": "ImageObject", url: `${BASE_URL}/opengraph.jpg` },
+        },
+        mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+        breadcrumb: {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Accueil", item: `${BASE_URL}/` },
+            { "@type": "ListItem", position: 2, name: "Blog", item: blogUrl },
+            { "@type": "ListItem", position: 3, name: article.title, item: canonical },
+          ],
+        },
+      };
+
+      const html = rewriteHead(template, {
+        title,
+        description,
+        canonical,
+        robots: ROBOTS_INDEX,
+        ogTitle: title,
+        ogDescription: description,
+        ogUrl: canonical,
+        ogType: "article",
+        ogImage,
+        twitterTitle: title,
+        twitterDescription: description,
+        twitterImage: ogImage,
+        jsonLd,
+      });
+      writeHtml(distPublic, `/blog/${article.slug}`, html);
+      blogCount++;
+    }
+    console.log(`[prerender] Blog article pages done (${blogCount}).`);
 
     // Close the DB pool so the process exits cleanly
     const { pool } = await import("@workspace/db");

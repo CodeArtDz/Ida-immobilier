@@ -6,6 +6,8 @@ import {
   getGetCityDetailQueryKey,
   useListProperties,
   getListPropertiesQueryKey,
+  useListArticles,
+  getListArticlesQueryKey,
 } from "@workspace/api-client-react";
 import {
   breadcrumbJsonLd,
@@ -16,6 +18,8 @@ import {
 } from "@workspace/seo";
 import { PropertyCard } from "@/components/property-card";
 import { Button } from "@/components/ui/button";
+import { Newspaper } from "lucide-react";
+import { resolveStorageUrl } from "@/lib/storage-url";
 import { useSeo } from "@/hooks/use-seo";
 import { useJsonLd } from "@/hooks/use-json-ld";
 import {
@@ -54,6 +58,16 @@ export default function Ville({ identifier }: { identifier: string }) {
   const { data: propsResp, isLoading: propsLoading } = useListProperties(propsParams, {
     query: { enabled: !!detail?.city.name, queryKey: getListPropertiesQueryKey(propsParams) },
   });
+
+  const articlesParams = {
+    status: "published",
+    cityId: detail?.city.id,
+    limit: 3,
+  } as any;
+  const { data: articlesResp } = useListArticles(articlesParams, {
+    query: { enabled: !!detail?.city.id, queryKey: getListArticlesQueryKey(articlesParams) },
+  });
+  const articles = articlesResp?.data ?? [];
 
   const properties = propsResp?.data ?? [];
   const city = detail?.city;
@@ -193,6 +207,49 @@ export default function Ville({ identifier }: { identifier: string }) {
             </p>
           )}
         </section>
+
+        {articles.length > 0 && (
+          <section>
+            <h2 className="font-serif text-2xl font-semibold text-primary mb-6">
+              Derniers articles sur {city.name}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {articles.map((a) => {
+                const cover = resolveStorageUrl(a.coverImageUrl);
+                return (
+                  <Link key={a.id} href={`/blog/${a.slug}`}>
+                    <article className="group bg-card border border-border rounded-xl overflow-hidden h-full flex flex-col cursor-pointer transition-shadow hover:shadow-lg">
+                      <div className="aspect-[16/10] bg-muted overflow-hidden">
+                        {cover ? (
+                          <img
+                            src={cover}
+                            alt={a.coverImageAlt ?? a.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <Newspaper className="w-8 h-8" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
+                        <h3 className="font-serif text-lg font-bold text-primary mb-2 line-clamp-2">
+                          {a.title}
+                        </h3>
+                        {a.excerpt && (
+                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                            {a.excerpt}
+                          </p>
+                        )}
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <LinkGrid heading={`Rechercher par type à ${city.name}`} links={typeLinks} />
 

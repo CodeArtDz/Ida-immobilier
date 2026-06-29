@@ -5,6 +5,7 @@ import {
   propertyMediaTable,
   citiesTable,
   usersTable,
+  articlesTable,
 } from "@workspace/db";
 import { eq, and, inArray, asc } from "drizzle-orm";
 import { buildAgentSlug, PROPERTY_TYPE_FR } from "@workspace/seo";
@@ -73,7 +74,7 @@ function sendXml(res: import("express").Response, xml: string): void {
 router.get("/sitemap.xml", (req, res) => {
   const domain = domainOf();
   const today = new Date().toISOString().split("T")[0];
-  const children = ["static", "properties", "cities", "agents", "images"];
+  const children = ["static", "properties", "cities", "agents", "blog", "images"];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${children
@@ -252,6 +253,37 @@ router.get("/sitemap-agents.xml", async (req, res) => {
     );
   } catch (err) {
     req.log.error({ err }, "Failed to generate agents sitemap");
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.get("/sitemap-blog.xml", async (req, res) => {
+  try {
+    const domain = domainOf();
+    const today = new Date().toISOString().split("T")[0];
+    const articles = await db
+      .select({
+        slug: articlesTable.slug,
+        updatedAt: articlesTable.updatedAt,
+        publishedAt: articlesTable.publishedAt,
+      })
+      .from(articlesTable)
+      .where(eq(articlesTable.status, "published"));
+
+    const entries: UrlEntry[] = [
+      { loc: `${domain}/blog`, changefreq: "weekly", priority: "0.7" },
+      ...articles.map((a) => ({
+        loc: `${domain}/blog/${a.slug}`,
+        lastmod: (a.updatedAt ?? a.publishedAt)
+          ? new Date((a.updatedAt ?? a.publishedAt) as Date).toISOString().split("T")[0]
+          : today,
+        changefreq: "monthly",
+        priority: "0.6",
+      })),
+    ];
+    sendXml(res, renderUrlset(entries));
+  } catch (err) {
+    req.log.error({ err }, "Failed to generate blog sitemap");
     res.status(500).send("Internal Server Error");
   }
 });

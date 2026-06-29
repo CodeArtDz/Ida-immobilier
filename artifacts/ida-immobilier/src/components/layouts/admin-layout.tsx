@@ -14,6 +14,7 @@ import {
   UserCog,
   UsersRound,
   CircleUser,
+  Newspaper,
   Menu,
   X
 } from "lucide-react";
@@ -30,6 +31,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const navigation = [
     { name: 'Tableau de bord', href: '/tableau-de-bord', icon: LayoutDashboard },
     { name: 'Biens', href: '/tableau-de-bord/biens', icon: Building2 },
+    { name: 'Articles', href: '/tableau-de-bord/articles', icon: Newspaper },
     { name: 'Leads', href: '/tableau-de-bord/leads', icon: Users },
     { name: 'Rendez-vous', href: '/tableau-de-bord/rendez-vous', icon: Calendar },
     { name: 'Estimations', href: '/tableau-de-bord/estimations', icon: Calculator },

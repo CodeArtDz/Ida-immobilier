@@ -26,6 +26,8 @@ import Inscription from "@/pages/inscription";
 import NotFound from "@/pages/not-found";
 import SeoResolver from "@/pages/seo/resolver";
 import AgentPage from "@/pages/seo/agent";
+import BlogIndex from "@/pages/blog/index";
+import BlogArticle from "@/pages/blog/article";
 
 import ClientDashboard from "@/pages/client/dashboard";
 import ClientProfil from "@/pages/client/profil";
@@ -38,6 +40,9 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import BiensList from "@/pages/admin/biens/index";
 import NouveauBien from "@/pages/admin/biens/nouveau";
 import EditBien from "@/pages/admin/biens/edit";
+import ArticlesList from "@/pages/admin/articles/index";
+import NouvelArticle from "@/pages/admin/articles/nouveau";
+import EditArticle from "@/pages/admin/articles/edit";
 import Leads from "@/pages/admin/leads";
 import AdminRendezVous from "@/pages/admin/rendez-vous";
 import AdminEstimations from "@/pages/admin/estimations";
@@ -73,6 +78,11 @@ function AgentPageRoute() {
   return <AgentPage slug={slug ?? ""} />;
 }
 
+function BlogArticleRoute() {
+  const { slug } = useParams();
+  return <BlogArticle slug={slug ?? ""} />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -104,6 +114,9 @@ function Router() {
       <Route path="/tableau-de-bord/biens" component={() => <ProtectedRoute component={BiensList} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/biens/nouveau" component={() => <ProtectedRoute component={NouveauBien} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/biens/:id" component={() => <ProtectedRoute component={EditBien} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
+      <Route path="/tableau-de-bord/articles" component={() => <ProtectedRoute component={ArticlesList} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
+      <Route path="/tableau-de-bord/articles/nouveau" component={() => <ProtectedRoute component={NouvelArticle} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
+      <Route path="/tableau-de-bord/articles/:id" component={() => <ProtectedRoute component={EditArticle} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/leads" component={() => <ProtectedRoute component={Leads} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/rendez-vous" component={() => <ProtectedRoute component={AdminRendezVous} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/estimations" component={() => <ProtectedRoute component={AdminEstimations} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
@@ -112,6 +125,9 @@ function Router() {
       <Route path="/tableau-de-bord/agences" component={() => <ProtectedRoute component={AdminAgences} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
       <Route path="/tableau-de-bord/utilisateurs" component={() => <ProtectedRoute component={AdminUtilisateurs} layout={AdminLayout} allowedRoles={['admin', 'superadmin']} />} />
       <Route path="/tableau-de-bord/profil" component={() => <ProtectedRoute component={AdminProfil} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
+
+      <Route path="/blog" component={() => <PublicRoute component={BlogIndex} />} />
+      <Route path="/blog/:slug" component={() => <PublicRoute component={BlogArticleRoute} />} />
 
       <Route path="/agents/:slug" component={() => <PublicRoute component={AgentPageRoute} />} />
       <Route path="/:slug" component={() => <PublicRoute component={SeoResolverRoute} />} />
