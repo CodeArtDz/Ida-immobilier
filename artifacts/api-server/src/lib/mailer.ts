@@ -268,6 +268,128 @@ export async function sendAppointmentUpdateEmail(data: AppointmentEmailData): Pr
   return ok;
 }
 
+// ─── Property alert emails (saved-search matches + favorite updates) ─────────
+
+export type PropertyAlertKind = "new_match" | "price_drop" | "status_change" | "back_on_market";
+
+export interface PropertyAlertEmailData {
+  to: string;
+  clientName?: string | null;
+  kind: PropertyAlertKind;
+  propertyTitle: string;
+  propertyId: number;
+  propertyCity: string;
+  price?: number | null;
+  oldPrice?: number | null;
+  statusLabel?: string | null;
+  savedSearchName?: string | null;
+}
+
+const ALERT_KIND: Record<PropertyAlertKind, { subject: string; heading: string; intro: string; color: string; bg: string; cta: string }> = {
+  new_match: {
+    subject: "Un nouveau bien correspond à votre recherche",
+    heading: "Nouveau bien disponible",
+    intro: "Un bien vient d'être publié et correspond à l'une de vos recherches enregistrées.",
+    color: "#15803d",
+    bg: "#dcfce7",
+    cta: "Découvrir le bien",
+  },
+  price_drop: {
+    subject: "Baisse de prix sur un bien suivi",
+    heading: "Baisse de prix",
+    intro: "Le prix d'un bien que vous avez ajouté à vos favoris vient de baisser.",
+    color: "#b45309",
+    bg: "#fef3c7",
+    cta: "Voir le nouveau prix",
+  },
+  back_on_market: {
+    subject: "Un bien suivi est de nouveau disponible",
+    heading: "De nouveau disponible",
+    intro: "Un bien que vous suiviez est de nouveau disponible à la vente ou à la location.",
+    color: "#15803d",
+    bg: "#dcfce7",
+    cta: "Voir le bien",
+  },
+  status_change: {
+    subject: "Mise à jour d'un bien suivi",
+    heading: "Statut mis à jour",
+    intro: "Le statut d'un bien que vous avez ajouté à vos favoris a changé.",
+    color: "#1d4ed8",
+    bg: "#dbeafe",
+    cta: "Voir le bien",
+  },
+};
+
+function formatEuro(value: number): string {
+  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+}
+
+function siteDomain(): string {
+  return (process.env.SITE_DOMAIN || "https://ida-immobilier.com").replace(/\/$/, "");
+}
+
+function propertyAlertTemplate(data: PropertyAlertEmailData): string {
+  const k = ALERT_KIND[data.kind];
+  const firstName = (data.clientName || "").trim().split(/\s+/)[0] || "Madame, Monsieur";
+  const propertyUrl = `${siteDomain()}/annonce/${data.propertyId}`;
+  const detailRow = (label: string, value: string) =>
+    `<tr><td style="padding:8px 0;border-bottom:1px solid #eef0f5;"><span style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">${label}</span></td><td style="padding:8px 0;border-bottom:1px solid #eef0f5;text-align:right;font-size:15px;color:#1a1a2e;font-weight:600;">${value}</td></tr>`;
+
+  let priceLine = "";
+  if (data.kind === "price_drop" && data.oldPrice != null && data.price != null) {
+    priceLine = `<tr><td style="padding:8px 0;border-bottom:1px solid #eef0f5;"><span style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Prix</span></td><td style="padding:8px 0;border-bottom:1px solid #eef0f5;text-align:right;font-size:15px;color:#1a1a2e;font-weight:600;"><span style="text-decoration:line-through;color:#9ca3af;font-weight:400;">${formatEuro(data.oldPrice)}</span> &nbsp;<span style="color:#b45309;">${formatEuro(data.price)}</span></td></tr>`;
+  } else if (data.price != null) {
+    priceLine = detailRow("Prix", formatEuro(data.price));
+  }
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>${k.subject}</title></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a2e;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <tr><td style="background:#0f2044;padding:28px 40px;text-align:center;">
+          <p style="margin:0;font-size:22px;font-weight:700;color:#c9a84c;letter-spacing:2px;font-family:Georgia,serif;">I.D.A IMMOBILIER</p>
+          <p style="margin:6px 0 0;font-size:12px;color:#a8b8d8;letter-spacing:1px;text-transform:uppercase;">Marignane · Provence</p>
+        </td></tr>
+        <tr><td style="padding:36px 40px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr><td style="background:${k.bg};border-radius:8px;padding:12px 18px;text-align:center;">
+            <p style="margin:0;font-size:16px;font-weight:700;color:${k.color};font-family:Georgia,serif;">${k.heading}</p>
+          </td></tr></table>
+          <p style="margin:0 0 8px;font-size:16px;color:#1a1a2e;">Bonjour ${firstName},</p>
+          <p style="margin:0 0 24px;font-size:14px;line-height:1.7;color:#374151;">${k.intro}${data.savedSearchName ? ` (recherche « ${data.savedSearchName} »)` : ""}</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9ff;border:1px solid #e0e7ff;border-radius:8px;padding:8px 20px;margin-bottom:24px;">
+            ${detailRow("Bien", data.propertyTitle)}
+            ${detailRow("Ville", data.propertyCity)}
+            ${priceLine}
+            ${data.statusLabel ? detailRow("Statut", data.statusLabel) : ""}
+          </table>
+          <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f2044;border-radius:8px;padding:0;">
+            <a href="${propertyUrl}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">${k.cta}</a>
+          </td></tr></table>
+          <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">Vous recevez cet email car vous avez enregistré une recherche ou ajouté ce bien à vos favoris sur votre espace client.</p>
+        </td></tr>
+        <tr><td style="background:#f8f9ff;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#9ca3af;">Ce message a été généré automatiquement par la plateforme I.D.A Immobilier.<br/>© ${new Date().getFullYear()} I.D.A Immobilier — Marignane, Provence</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendPropertyAlertEmail(data: PropertyAlertEmailData): Promise<boolean> {
+  const ok = await sendEmail({
+    to: data.to,
+    subject: `${ALERT_KIND[data.kind].subject} — I.D.A Immobilier`,
+    html: propertyAlertTemplate(data),
+  });
+  if (ok) logger.info({ to: data.to, kind: data.kind, propertyId: data.propertyId }, "Property alert email sent");
+  return ok;
+}
+
 export async function sendPropertyContactEmails(data: PropertyContactEmailData): Promise<boolean> {
   const html = htmlTemplate(data);
   const subjectAgent = `Nouveau message — Réf. IDA-${data.propertyId} — ${data.propertyTitle}`;

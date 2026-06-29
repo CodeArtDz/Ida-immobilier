@@ -13,6 +13,7 @@ import { eq, and, desc, sql, ilike, gte, lte, count, inArray } from "drizzle-orm
 import { requireAuth, optionalAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { pingIndexNow } from "../lib/indexnow";
+import { notifySavedSearchMatches, notifyFavoriteChanges } from "../lib/property-matching";
 import { buildPropertySlug } from "@workspace/seo";
 import multer from "multer";
 import { applyWatermarkBuffer } from "../lib/watermark";
@@ -588,6 +589,11 @@ router.patch("/properties/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id as string);
     const data = stripNullBytes({ ...req.body });
 
+    // Snapshot the full row before the update so we can detect price/status
+    // transitions and fire match-alert notifications afterwards.
+    const [before] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
+    if (!before) { res.status(404).json({ error: "Bien non trouvé" }); return; }
+
     // Re-geocode when address fields change but valid coordinates weren't sent.
     const addressChanged =
       data.address !== undefined ||
@@ -595,22 +601,11 @@ router.patch("/properties/:id", requireAuth, async (req, res) => {
       data.city !== undefined ||
       data.country !== undefined;
     if (addressChanged && !hasValidCoords(data.latitude, data.longitude)) {
-      const [existing] = await db
-        .select({
-          address: propertiesTable.address,
-          postalCode: propertiesTable.postalCode,
-          city: propertiesTable.city,
-          country: propertiesTable.country,
-        })
-        .from(propertiesTable)
-        .where(eq(propertiesTable.id, id));
-      // Verify the property exists before spending an external geocode request.
-      if (!existing) { res.status(404).json({ error: "Bien non trouvé" }); return; }
       const geo = await geocodeAddress({
-        address: data.address ?? existing.address,
-        postalCode: data.postalCode ?? existing.postalCode,
-        city: data.city ?? existing.city,
-        country: data.country ?? existing.country,
+        address: data.address ?? before.address,
+        postalCode: data.postalCode ?? before.postalCode,
+        city: data.city ?? before.city,
+        country: data.country ?? before.country,
       });
       if (geo) {
         data.latitude = geo.latitude;
@@ -621,6 +616,17 @@ router.patch("/properties/:id", requireAuth, async (req, res) => {
 
     const [updated] = await db.update(propertiesTable).set({ ...data, updatedAt: new Date() }).where(eq(propertiesTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Bien non trouvé" }); return; }
+
+    // Best-effort, non-blocking match alerts. A transition into "published"
+    // (newly listed or back on the market) is matched against saved searches;
+    // price drops and status changes notify the property's favoriters.
+    const becamePublished = updated.status === "published" && before.status !== "published";
+    void notifyFavoriteChanges(before, updated);
+    if (becamePublished) {
+      const kind = before.status === "draft" ? "new_match" : "back_on_market";
+      void notifySavedSearchMatches(updated, kind);
+    }
+
     res.json({ ...updated, salePrice: updated.salePrice ? parseFloat(updated.salePrice) : null, rentalPrice: updated.rentalPrice ? parseFloat(updated.rentalPrice) : null, agentName: null, agentPhone: null, agentEmail: null, agentAvatarUrl: null, agencyName: null, mainImageUrl: null, mediaCount: 0 });
   } catch (err) {
     logger.error({ err }, "Update property error");
@@ -633,9 +639,19 @@ router.patch("/properties/:id/publish", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id as string);
     const user = (req as any).user;
+    const [before] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
+    if (!before) { res.status(404).json({ error: "Bien non trouvé" }); return; }
     const [updated] = await db.update(propertiesTable).set({ status: "published", updatedAt: new Date() }).where(eq(propertiesTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Bien non trouvé" }); return; }
     pingIndexNow([`/annonce/${updated.id}`]);
+
+    // Best-effort, non-blocking match alerts when a property enters "published".
+    if (before.status !== "published") {
+      const kind = before.status === "draft" ? "new_match" : "back_on_market";
+      void notifySavedSearchMatches(updated, kind);
+      void notifyFavoriteChanges(before, updated);
+    }
+
     await db.insert(activityLogsTable).values({
       type: "property_published",
       description: `Bien publié : ${updated.title}`,
