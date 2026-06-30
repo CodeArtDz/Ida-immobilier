@@ -30,3 +30,35 @@ SEO audit working standalone with zero config.
   alone is not enough.
 - PageSpeed needs a publicly reachable URL (`SITE_DOMAIN`); it returns
   unavailable in dev / before the public domain is live.
+
+## Provisioning gotchas (cost real debugging time)
+
+- **Don't trust the IDs the (non-technical) user typed.** They mix up sites/properties.
+  Verify against what the service account can actually reach:
+  - GSC: `GET webmasters/v3/sites` → lists exact `siteUrl`s the SA sees.
+  - GA4: `GET analyticsadmin/v1beta/accountSummaries` → lists `properties/<id>` + names.
+    Requires the **Google Analytics Admin API** enabled in the GCP project (separate
+    from the Data API) — otherwise 403 "has not been used in project".
+- **GSC domain properties use the `sc-domain:example.com` format**, NOT
+  `https://example.com/`. Wrong format → 403 "insufficient permission". A property
+  shown as a bare domain (no http) in the GSC UI is a Domain property.
+- **GA4 Data API 403 "insufficient permissions for this property"** almost always
+  means `GA4_PROPERTY_ID` is the wrong numeric id (not the property the SA was added
+  to), not a real permission gap. The web Measurement ID (`G-XXXX`) is NOT the
+  numeric property id.
+- **The agent cannot fix a secret holding a wrong value.** `setEnvVars` refuses when
+  a same-named secret exists (even for non-sensitive config like a property id), and
+  there's no agent API to delete a secret. The requestEnvVar form can re-save the old
+  pre-filled value if the user doesn't clear it. Resolution: have the user edit/delete
+  the value in the **Secrets UI** directly, then verify against the running server.
+- **Verify against the running server, not the agent's shell env or `viewEnvVars`.**
+  `viewEnvVars` returns booleans for secrets (no value); the long-lived bash shell can
+  lag on secret changes. Ground truth = restart api-server, then hit
+  `/api/seo/google/status` (it echoes the loaded `propertyId`/`siteUrl`) with a
+  disposable staff token.
+- **Never let the SA key JSON live in the repo.** When the user pastes the full
+  service-account JSON into chat, Replit saves it to `attached_assets/` (a committed
+  file) — a credential leak that fails code review. Delete that file immediately
+  (`rg -l "private_key|BEGIN PRIVATE KEY" attached_assets/`) and tell the user to
+  rotate/revoke the exposed key in GCP, keeping it only in the
+  `GOOGLE_SERVICE_ACCOUNT_JSON` secret.
