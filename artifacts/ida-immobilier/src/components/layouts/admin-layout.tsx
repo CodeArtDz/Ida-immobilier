@@ -30,7 +30,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navigation = [
-    { name: 'Tableau de bord', href: '/tableau-de-bord', icon: LayoutDashboard },
     { name: 'Biens', href: '/tableau-de-bord/biens', icon: Building2 },
     { name: 'Articles', href: '/tableau-de-bord/articles', icon: Newspaper },
     { name: 'Leads', href: '/tableau-de-bord/leads', icon: Users },
@@ -38,6 +37,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { name: 'Estimations', href: '/tableau-de-bord/estimations', icon: Calculator },
     { name: 'Messages', href: '/tableau-de-bord/messages', icon: MessageSquare },
   ];
+
+  // The analytics overview dashboard is only available to superadmin/admin.
+  if (user?.role === 'superadmin' || user?.role === 'admin') {
+    navigation.unshift({ name: 'Tableau de bord', href: '/tableau-de-bord', icon: LayoutDashboard });
+  }
 
   if (user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'agency_manager') {
     navigation.push({ name: 'CRM', href: '/tableau-de-bord/crm', icon: UsersRound });

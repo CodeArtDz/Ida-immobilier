@@ -2,13 +2,13 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { propertiesTable, leadsTable, appointmentsTable, estimationsTable, activityLogsTable, usersTable } from "@workspace/db";
 import { eq, gte, count, avg, desc, sql, isNotNull, ne } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
-// GET /analytics/dashboard
-router.get("/analytics/dashboard", requireAuth, async (_req, res) => {
+// GET /analytics/dashboard — analytics overview, staff management only
+router.get("/analytics/dashboard", requireAuth, requireRole("superadmin", "admin"), async (_req, res) => {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -120,8 +120,8 @@ router.get("/analytics/cities", async (_req, res) => {
   }
 });
 
-// GET /analytics/website
-router.get("/analytics/website", requireAuth, async (_req, res) => {
+// GET /analytics/website — performance & SEO health, staff management only
+router.get("/analytics/website", requireAuth, requireRole("superadmin", "admin"), async (_req, res) => {
   try {
     const [
       topProperties,

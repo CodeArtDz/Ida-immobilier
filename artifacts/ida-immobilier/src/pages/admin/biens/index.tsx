@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useListProperties, useListUsers } from "@workspace/api-client-react";
+import { useListProperties, useListUsers, getListUsersQueryKey } from "@workspace/api-client-react";
 import type { Property } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,13 +31,19 @@ const PROPERTY_TYPE_LABEL: Record<string, string> = {
 const STAFF_ROLES = ["superadmin", "admin", "agency_manager", "agent"];
 
 export default function BiensList() {
+  const { user } = useAuth();
+  // Agents only see (and manage) their own properties — no cross-agent filtering.
+  const isAgent = user?.role === "agent";
+  // Only admins/superadmins can reassign a property's responsible agent.
+  const canAssignAgent = user?.role === "superadmin" || user?.role === "admin";
+
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [assignTarget, setAssignTarget] = useState<Property | null>(null);
 
   const { data: propertiesResponse, isLoading } = useListProperties(
-    agentFilter !== "all" ? { agentId: Number(agentFilter) } : undefined,
+    !isAgent && agentFilter !== "all" ? { agentId: Number(agentFilter) } : undefined,
   );
-  const { data: allUsers = [] } = useListUsers();
+  const { data: allUsers = [] } = useListUsers(undefined, { query: { queryKey: getListUsersQueryKey(), enabled: !isAgent } });
   const agents = allUsers.filter((u) => STAFF_ROLES.includes(u.role));
 
   const properties = propertiesResponse?.data ?? [];
@@ -53,23 +60,25 @@ export default function BiensList() {
         </Link>
       </div>
 
-      {/* Filter by responsible agent */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-        <span className="text-sm text-muted-foreground">Agent responsable :</span>
-        <Select value={agentFilter} onValueChange={setAgentFilter}>
-          <SelectTrigger className="w-full sm:w-72">
-            <SelectValue placeholder="Tous les agents" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les agents</SelectItem>
-            {agents.map((a) => (
-              <SelectItem key={a.id} value={String(a.id)}>
-                {a.firstName} {a.lastName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Filter by responsible agent — hidden for agents (they only see their own biens) */}
+      {!isAgent && (
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <span className="text-sm text-muted-foreground">Agent responsable :</span>
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger className="w-full sm:w-72">
+              <SelectValue placeholder="Tous les agents" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les agents</SelectItem>
+              {agents.map((a) => (
+                <SelectItem key={a.id} value={String(a.id)}>
+                  {a.firstName} {a.lastName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Table>
@@ -117,9 +126,11 @@ export default function BiensList() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" title="Changer l'agent responsable" onClick={() => setAssignTarget(property)}>
-                        <UserCog className="w-4 h-4" />
-                      </Button>
+                      {canAssignAgent && (
+                        <Button variant="ghost" size="icon" title="Changer l'agent responsable" onClick={() => setAssignTarget(property)}>
+                          <UserCog className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" asChild>
                         <Link href={`/annonce/${property.id}`}><Eye className="w-4 h-4" /></Link>
                       </Button>

@@ -24,8 +24,10 @@ export default function Connexion() {
         login(data.token, data.user);
         if (data.user.role === 'client') {
           setLocation("/espace-client");
-        } else {
+        } else if (data.user.role === 'superadmin' || data.user.role === 'admin') {
           setLocation("/tableau-de-bord");
+        } else {
+          setLocation("/tableau-de-bord/biens");
         }
       },
       onError: () => {

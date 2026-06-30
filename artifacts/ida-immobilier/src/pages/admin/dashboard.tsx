@@ -1,5 +1,7 @@
-import { useGetDashboardAnalytics, useGetCityStats } from "@workspace/api-client-react";
+import { useGetDashboardAnalytics, useGetCityStats, getGetDashboardAnalyticsQueryKey, getGetCityStatsQueryKey } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
+import { Redirect } from "wouter";
+import { useAuth } from "@/contexts/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Users, Calendar, Calculator, Eye, Globe, BarChart3 } from "lucide-react";
 import {
@@ -14,9 +16,10 @@ interface WebsiteStats {
   leadSources: Array<{ source: string; label: string; count: number }>;
 }
 
-const useWebsiteAnalytics = () =>
+const useWebsiteAnalytics = (enabled: boolean) =>
   useQuery<WebsiteStats>({
     queryKey: ["analytics", "website"],
+    enabled,
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
@@ -57,9 +60,16 @@ function SeoBar({ label, percent }: { label: string; percent: number }) {
 }
 
 export default function AdminDashboard() {
-  const { data: analytics, isLoading: isLoadingAnalytics } = useGetDashboardAnalytics();
-  const { data: cityStats, isLoading: isLoadingCityStats } = useGetCityStats();
-  const { data: websiteStats } = useWebsiteAnalytics();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "superadmin" || user?.role === "admin";
+
+  const { data: analytics, isLoading: isLoadingAnalytics } = useGetDashboardAnalytics({ query: { queryKey: getGetDashboardAnalyticsQueryKey(), enabled: isAdmin } });
+  const { data: cityStats, isLoading: isLoadingCityStats } = useGetCityStats({ query: { queryKey: getGetCityStatsQueryKey(), enabled: isAdmin } });
+  const { data: websiteStats } = useWebsiteAnalytics(isAdmin);
+
+  // The analytics overview (incl. Santé SEO) is reserved for superadmin/admin.
+  // Other staff (agents, agency managers) are sent to their property workspace.
+  if (user && !isAdmin) return <Redirect to="/tableau-de-bord/biens" />;
 
   if (isLoadingAnalytics) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
 

@@ -9,7 +9,7 @@ import {
   favoritesTable,
   activityLogsTable,
 } from "@workspace/db";
-import { eq, and, desc, sql, ilike, gte, lte, count, inArray } from "drizzle-orm";
+import { eq, and, or, desc, sql, ilike, gte, lte, count, inArray } from "drizzle-orm";
 import { requireAuth, optionalAuth, requireRole } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { pingIndexNow } from "../lib/indexnow";
@@ -156,6 +156,32 @@ async function resolveEffectiveAgents(
   return result;
 }
 
+// Agents may only read/mutate properties they own or are currently responsible
+// for. Staff with broader roles (agency_manager and above) are not scoped here.
+function agentMayAccessProperty(
+  user: { id: number; role: string } | undefined | null,
+  property: { ownerAgentId: number; currentAgentId: number | null },
+): boolean {
+  if (!user || user.role !== "agent") return true;
+  return property.ownerAgentId === user.id || property.currentAgentId === user.id;
+}
+
+// Loads a property by id and enforces agent ownership scope. On failure it writes
+// the appropriate response (404 missing / 403 forbidden) and returns null.
+async function loadPropertyForUser(
+  req: Request,
+  res: Response,
+  id: number,
+): Promise<typeof propertiesTable.$inferSelect | null> {
+  const [property] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
+  if (!property) { res.status(404).json({ error: "Bien non trouvé" }); return null; }
+  const user = (req as any).user;
+  if (!agentMayAccessProperty(user, property)) {
+    res.status(403).json({ error: "Accès refusé" }); return null;
+  }
+  return property;
+}
+
 // GET /properties
 router.get("/properties", optionalAuth, async (req, res) => {
   try {
@@ -178,6 +204,17 @@ router.get("/properties", optionalAuth, async (req, res) => {
       conditions.push(eq(propertiesTable.status, "published"));
     } else if (status) {
       conditions.push(eq(propertiesTable.status, status as any));
+    }
+
+    // Agents only see properties they own (added) or are currently responsible for.
+    // Admins, superadmins and agency managers see all properties.
+    if (user && user.role === "agent") {
+      conditions.push(
+        or(
+          eq(propertiesTable.ownerAgentId, user.id),
+          eq(propertiesTable.currentAgentId, user.id),
+        )!,
+      );
     }
 
     if (type) conditions.push(eq(propertiesTable.type, type as any));
@@ -399,6 +436,10 @@ router.get("/properties/slug/:slug", optionalAuth, async (req, res) => {
     if (property.status !== "published" && (!user || user.role === "client")) {
       res.status(404).json({ error: "Bien non trouvé" }); return;
     }
+    // Agents may not preview another agent's unpublished property by slug.
+    if (property.status !== "published" && !agentMayAccessProperty(user, property)) {
+      res.status(404).json({ error: "Bien non trouvé" }); return;
+    }
 
     await db.update(propertiesTable).set({ viewCount: property.viewCount + 1 }).where(eq(propertiesTable.id, property.id));
 
@@ -445,6 +486,10 @@ router.get("/properties/:id", optionalAuth, async (req, res) => {
 
     const user = (req as any).user;
     if (property.status !== "published" && (!user || user.role === "client")) {
+      res.status(404).json({ error: "Bien non trouvé" }); return;
+    }
+    // Agents may only access their own / currently-assigned properties.
+    if (!agentMayAccessProperty(user, property)) {
       res.status(404).json({ error: "Bien non trouvé" }); return;
     }
 
@@ -593,6 +638,9 @@ router.patch("/properties/:id", requireAuth, async (req, res) => {
     // transitions and fire match-alert notifications afterwards.
     const [before] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
     if (!before) { res.status(404).json({ error: "Bien non trouvé" }); return; }
+    if (!agentMayAccessProperty((req as any).user, before)) {
+      res.status(403).json({ error: "Accès refusé" }); return;
+    }
 
     // Re-geocode when address fields change but valid coordinates weren't sent.
     const addressChanged =
@@ -642,6 +690,9 @@ router.patch("/properties/:id/publish", requireAuth, async (req, res) => {
     const user = (req as any).user;
     const [before] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
     if (!before) { res.status(404).json({ error: "Bien non trouvé" }); return; }
+    if (!agentMayAccessProperty(user, before)) {
+      res.status(403).json({ error: "Accès refusé" }); return;
+    }
     const [updated] = await db.update(propertiesTable).set({ status: "published", updatedAt: new Date() }).where(eq(propertiesTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Bien non trouvé" }); return; }
     pingIndexNow([`/annonce/${updated.id}`]);
@@ -672,6 +723,8 @@ router.patch("/properties/:id/publish", requireAuth, async (req, res) => {
 router.delete("/properties/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id as string);
+    const property = await loadPropertyForUser(req, res, id);
+    if (!property) return;
     await db.delete(propertiesTable).where(eq(propertiesTable.id, id));
     res.status(204).send();
   } catch (err) {
@@ -719,9 +772,11 @@ router.get("/properties/:id/media", async (req, res) => {
 // POST /properties/:id/media
 router.post("/properties/:id/media", requireAuth, async (req, res) => {
   try {
+    const propertyId = parseInt(req.params.id as string);
+    if (!(await loadPropertyForUser(req, res, propertyId))) return;
     const [media] = await db.insert(propertyMediaTable).values({
       ...req.body,
-      propertyId: parseInt(req.params.id as string),
+      propertyId,
     }).returning();
     res.status(201).json(media);
   } catch (err) {
@@ -740,6 +795,7 @@ router.post("/properties/:id/media/upload", requireAuth, upload.single("file"), 
     }
 
     const propertyId = parseInt(req.params.id as string);
+    if (!(await loadPropertyForUser(req, res, propertyId))) return;
     const isImage = file.mimetype.startsWith("image/");
 
     // Persist to object storage (durable) rather than local disk (ephemeral in
@@ -826,6 +882,7 @@ router.post("/properties/:id/media/upload", requireAuth, upload.single("file"), 
 // DELETE /properties/:id/media/:mediaId
 router.delete("/properties/:id/media/:mediaId", requireAuth, async (req, res) => {
   try {
+    if (!(await loadPropertyForUser(req, res, parseInt(req.params.id as string)))) return;
     await db.delete(propertyMediaTable).where(eq(propertyMediaTable.id, parseInt(req.params.mediaId as string)));
     res.status(204).send();
   } catch (err) {
@@ -839,6 +896,7 @@ router.post("/properties/:id/media/:mediaId/main", requireAuth, async (req, res)
   try {
     const propertyId = parseInt(req.params.id as string);
     const mediaId = parseInt(req.params.mediaId as string);
+    if (!(await loadPropertyForUser(req, res, propertyId))) return;
 
     const updated = await db.transaction(async (tx) => {
       const all = await tx
