@@ -30,6 +30,8 @@ const enrichAppointment = async (appt: any) => {
 // GET /appointments
 router.get("/appointments", requireAuth, async (req, res) => {
   try {
+    const user = (req as any).user;
+    const isAdmin = user.role === "superadmin" || user.role === "admin";
     const { agentId, clientId, propertyId, from, to } = req.query as Record<string, string>;
     const conditions = [];
     if (agentId) conditions.push(eq(appointmentsTable.agentId, parseInt(agentId)));
@@ -37,6 +39,11 @@ router.get("/appointments", requireAuth, async (req, res) => {
     if (propertyId) conditions.push(eq(appointmentsTable.propertyId, parseInt(propertyId)));
     if (from) conditions.push(gte(appointmentsTable.scheduledAt, new Date(from)));
     if (to) conditions.push(lte(appointmentsTable.scheduledAt, new Date(to)));
+    // Only admins/superadmins see every appointment. Everyone else is restricted
+    // to their own: clients matched on clientId, staff (agent / agency_manager) on agentId.
+    if (!isAdmin) {
+      conditions.push(eq(user.role === "client" ? appointmentsTable.clientId : appointmentsTable.agentId, user.id));
+    }
     const appts = conditions.length > 0
       ? await db.select().from(appointmentsTable).where(and(...conditions))
       : await db.select().from(appointmentsTable);
@@ -51,8 +58,13 @@ router.get("/appointments", requireAuth, async (req, res) => {
 // GET /appointments/:id
 router.get("/appointments/:id", requireAuth, async (req, res) => {
   try {
+    const user = (req as any).user;
+    const isAdmin = user.role === "superadmin" || user.role === "admin";
     const [appt] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, parseInt(req.params.id as string)));
     if (!appt) { res.status(404).json({ error: "Rendez-vous non trouvé" }); return; }
+    // Non-admins may only access their own appointment; hide others as not found.
+    const owns = user.role === "client" ? appt.clientId === user.id : appt.agentId === user.id;
+    if (!isAdmin && !owns) { res.status(404).json({ error: "Rendez-vous non trouvé" }); return; }
     res.json(await enrichAppointment(appt));
   } catch (err) {
     logger.error({ err }, "Get appointment error");
@@ -89,9 +101,13 @@ router.post("/appointments", optionalAuth, async (req, res) => {
 // PATCH /appointments/:id
 router.patch("/appointments/:id", requireAuth, requireRole(...STAFF_ROLES), async (req, res) => {
   try {
+    const user = (req as any).user;
+    const isAdmin = user.role === "superadmin" || user.role === "admin";
     const id = parseInt(req.params.id as string);
     const [existing] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, id));
     if (!existing) { res.status(404).json({ error: "Rendez-vous non trouvé" }); return; }
+    // Non-admin staff may only modify appointments they are the responsible agent for.
+    if (!isAdmin && existing.agentId !== user.id) { res.status(404).json({ error: "Rendez-vous non trouvé" }); return; }
 
     const data = { ...req.body, updatedAt: new Date() };
     if (data.scheduledAt) data.scheduledAt = new Date(data.scheduledAt);
@@ -138,7 +154,14 @@ router.patch("/appointments/:id", requireAuth, requireRole(...STAFF_ROLES), asyn
 // DELETE /appointments/:id
 router.delete("/appointments/:id", requireAuth, requireRole(...STAFF_ROLES), async (req, res) => {
   try {
-    await db.delete(appointmentsTable).where(eq(appointmentsTable.id, parseInt(req.params.id as string)));
+    const user = (req as any).user;
+    const isAdmin = user.role === "superadmin" || user.role === "admin";
+    const id = parseInt(req.params.id as string);
+    const [existing] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, id));
+    if (!existing) { res.status(204).send(); return; }
+    // Non-admin staff may only delete appointments they are the responsible agent for.
+    if (!isAdmin && existing.agentId !== user.id) { res.status(404).json({ error: "Rendez-vous non trouvé" }); return; }
+    await db.delete(appointmentsTable).where(eq(appointmentsTable.id, id));
     res.status(204).send();
   } catch (err) {
     logger.error({ err }, "Delete appointment error");
