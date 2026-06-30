@@ -1,6 +1,7 @@
 - [Auth token wiring & persistence](auth-token-wiring.md) — setAuthTokenGetter must be in main.tsx (else 401); tokens MUST be in DB `sessions` table not in-memory Map — autoscale wipes memory → /auth/me 401 → user null → authed UI (avatar) vanishes
 - [Sharp build approval](sharp-build-approval.md) — add `sharp` to onlyBuiltDependencies in pnpm-workspace.yaml before installing it
 - [SEO score scans production](seo-spa-deployment.md) — Replit "Santé SEO" scores the published deployment, not dev; low score after dev SEO work = needs republish
+- [Validation reviews whole branch](validation-vs-task-mismatch.md) — mark_task_complete grades the full branch diff vs the stale assigned task; small tasks get REJECTED for unrelated SEO-dashboard criteria — skip with reason
 - [Property RBAC scoping](property-rbac-scoping.md) — agents access only own/assigned properties; guard EVERY by-id route, list filter alone is an IDOR hole
 - [Google SEO integration model](google-seo-integration.md) — no Replit connector for GSC/GA; SEO dashboard uses a Google service-account via secrets, degrades to connected:false
 - [Vercel dual-platform](vercel-dual-platform.md) — runs on Replit AND Vercel via env-based provider selection (storage facade, portable upload, URL resolver, serverless pool/port defaults)
