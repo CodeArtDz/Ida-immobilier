@@ -30,6 +30,11 @@ SEO audit working standalone with zero config.
   alone is not enough.
 - PageSpeed needs a publicly reachable URL (`SITE_DOMAIN`); it returns
   unavailable in dev / before the public domain is live.
+- **PageSpeed keyless quota is tiny and shared → frequent 429** even when the
+  domain is live and reachable. A 429 is NOT a reachability/domain problem; it's
+  the anonymous daily quota. Setting the (free) `PAGESPEED_API_KEY` secret gives a
+  dedicated, much higher quota. `fetchPageSpeed` maps 429 → guidance to add the key,
+  and 400/500 → "page not publicly accessible". Don't treat 429 as "site down".
 
 ## Provisioning gotchas (cost real debugging time)
 

@@ -377,7 +377,18 @@ export async function fetchPageSpeed(
     const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`);
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      result.error = `PageSpeed API ${res.status}: ${text.slice(0, 200)}`;
+      if (res.status === 429) {
+        // PageSpeed's keyless quota is very low and shared; it is exhausted often.
+        // Guide the owner to add a (free) PAGESPEED_API_KEY for a dedicated quota.
+        result.error = key
+          ? "Quota PageSpeed dépassé pour aujourd'hui. Réessayez demain."
+          : "Quota PageSpeed (sans clé) dépassé. Ajoutez le secret PAGESPEED_API_KEY (gratuit) pour une mesure fiable, ou réessayez plus tard.";
+      } else if (res.status === 400 || res.status === 500) {
+        // 400/500 from PageSpeed usually means the URL could not be fetched/rendered.
+        result.error = `Page inaccessible pour PageSpeed (${res.status}). Vérifiez que ${url} est publiée et accessible publiquement.`;
+      } else {
+        result.error = `PageSpeed API ${res.status}: ${text.slice(0, 200)}`;
+      }
       return result;
     }
     const json = (await res.json()) as {
