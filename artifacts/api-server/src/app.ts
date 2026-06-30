@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import path from "path";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { logEmailConfig } from "./lib/mailer";
 
 // Legacy local upload dir (uploads now go to object storage). Kept portable and
 // optional: on serverless hosts (Vercel) the dir may not exist, in which case
@@ -38,5 +39,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/uploads", express.static(UPLOADS_DIR));
 
 app.use("/api", router);
+
+// Surface email transport/sender config once at startup (and on each Vercel
+// cold start) so deployment logs reveal misconfiguration before a real send.
+logEmailConfig();
 
 export default app;

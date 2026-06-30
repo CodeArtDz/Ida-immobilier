@@ -5,6 +5,7 @@
 - [Google SEO integration model](google-seo-integration.md) — no Replit connector for GSC/GA; SEO dashboard uses a Google service-account via secrets, degrades to connected:false
 - [Vercel dual-platform](vercel-dual-platform.md) — runs on Replit AND Vercel via env-based provider selection (storage facade, portable upload, URL resolver, serverless pool/port defaults)
 - [Appointment update emails](appointment-emails.md) — confirm/reschedule/refuse notify the ORIGINAL requester clientEmail (pre-update), never the PATCH payload; SMTP must be set or it silently no-ops
+- [Email sender config](email-sender-config.md) — From is always EMAIL_FROM (not connector); unset = sandbox sender → silently only owner gets mail on BOTH platforms; verified domain ida-immobilier.com; logEmailConfig() + delivered@resend.dev test sink to verify
 - [Property geocoding](property-geocoding.md) — property lat/lng auto-derived from address via free Nominatim (OSM) on create/update; best-effort, rate-limited, cached
 - [Testing auth-gated routes](testing-auth-routes.md) — live dev DB diverges from seed creds in replit.md; create a disposable scrypt admin (salt:hexkey) to e2e-test, then clean up
 - [French legal pages](legal-pages.md) — never fabricate FR agency legal identifiers (SIRET, RCS, carte pro, host phone…); leave them as TODO placeholders for the owner

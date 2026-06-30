@@ -16,6 +16,36 @@ const RESEND_API_URL = "https://api.resend.com/emails";
 
 const connectors = new ReplitConnectors();
 
+// The Resend sandbox sender only delivers to the Resend account owner's own
+// inbox, so it is unfit for production client delivery.
+const SANDBOX_SENDER = "onboarding@resend.dev";
+
+// Logs the active email transport and sender once at startup so the deployed
+// environment's logs make it obvious whether outbound email is correctly wired.
+// On Vercel this surfaces a missing RESEND_API_KEY or a sandbox EMAIL_FROM
+// before any real send is attempted.
+export function logEmailConfig(): void {
+  const onVercel = Boolean(process.env.VERCEL);
+  const transport = onVercel ? "resend-rest-api" : "replit-connector";
+  const usingSandbox = EMAIL_FROM.includes(SANDBOX_SENDER);
+
+  if (onVercel && !process.env.RESEND_API_KEY) {
+    logger.error(
+      { transport, from: EMAIL_FROM },
+      "Email misconfigured: running on Vercel but RESEND_API_KEY is not set; outbound email will fail",
+    );
+    return;
+  }
+  if (usingSandbox) {
+    logger.warn(
+      { transport, from: EMAIL_FROM },
+      "Email using the Resend sandbox sender; only the Resend account owner will receive messages. Set EMAIL_FROM to a verified domain sender",
+    );
+    return;
+  }
+  logger.info({ transport, from: EMAIL_FROM }, "Email configured");
+}
+
 interface SendEmailArgs {
   to: string;
   subject: string;

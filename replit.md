@@ -78,9 +78,11 @@ The app runs on both Replit and Vercel. Platform-specific behavior is selected a
 
 ### Vercel env vars
 
-Required: `DATABASE_URL`. For Vercel Blob storage: `BLOB_READ_WRITE_TOKEN` (auto-added by Vercel's Storage tab). Optional overrides (all have defaults): `STORAGE_PROVIDER`, `EMAIL_FROM`, `ADMIN_EMAIL`, `SITE_DOMAIN`, `LOG_LEVEL`. `NODE_ENV`/`VERCEL` are set by Vercel. The Replit-only vars (`PORT`, `BASE_PATH`, `PRIVATE_OBJECT_DIR`, `PUBLIC_OBJECT_SEARCH_PATHS`, `UPLOADS_DIR`, `REPL_ID`) are not used on Vercel.
+Required: `DATABASE_URL`. For Vercel Blob storage: `BLOB_READ_WRITE_TOKEN` (auto-added by Vercel's Storage tab). For real email delivery: `RESEND_API_KEY` and `EMAIL_FROM` (see Email below — `EMAIL_FROM` defaults to the Resend sandbox sender which only delivers to the account owner, so it must be set to the verified domain sender in production). Optional overrides (all have defaults): `STORAGE_PROVIDER`, `ADMIN_EMAIL`, `SITE_DOMAIN`, `LOG_LEVEL`. `NODE_ENV`/`VERCEL` are set by Vercel. The Replit-only vars (`PORT`, `BASE_PATH`, `PRIVATE_OBJECT_DIR`, `PUBLIC_OBJECT_SEARCH_PATHS`, `UPLOADS_DIR`, `REPL_ID`) are not used on Vercel.
 
 **Email**: the mailer picks its transport at runtime. On Replit it uses the Replit Connectors SDK (`@replit/connectors-sdk`) for Resend (key/auth handled automatically). On Vercel (`process.env.VERCEL` set) it calls the Resend REST API (`https://api.resend.com/emails`) directly using the `RESEND_API_KEY` secret — set this in the Vercel project for outbound email to work; without it, sends fail (logged) and are treated as best-effort no-ops. No `SESSION_SECRET` is read — auth tokens are stored in an in-memory Map.
+
+The `from` address always comes from `EMAIL_FROM` (never the connector's configured sender) on both platforms, so it must be a verified Resend domain sender. The verified sender domain is `ida-immobilier.com` (e.g. `I.D.A Immobilier <contact@ida-immobilier.com>`). On startup (and each Vercel cold start) `logEmailConfig()` logs the active transport + sender: `"Email configured"` when wired correctly, a WARN if it falls back to the sandbox sender, or an ERROR on Vercel if `RESEND_API_KEY` is missing — use these log lines to verify a deployment.
 
 ### Known limitations
 
