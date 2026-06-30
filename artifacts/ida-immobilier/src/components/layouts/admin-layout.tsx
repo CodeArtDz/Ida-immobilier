@@ -32,11 +32,18 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const navigation = [
     { name: 'Biens', href: '/tableau-de-bord/biens', icon: Building2 },
     { name: 'Articles', href: '/tableau-de-bord/articles', icon: Newspaper },
-    { name: 'Leads', href: '/tableau-de-bord/leads', icon: Users },
+  ];
+
+  // The leads pipeline is hidden from agents.
+  if (user?.role !== 'agent') {
+    navigation.push({ name: 'Leads', href: '/tableau-de-bord/leads', icon: Users });
+  }
+
+  navigation.push(
     { name: 'Rendez-vous', href: '/tableau-de-bord/rendez-vous', icon: Calendar },
     { name: 'Estimations', href: '/tableau-de-bord/estimations', icon: Calculator },
     { name: 'Messages', href: '/tableau-de-bord/messages', icon: MessageSquare },
-  ];
+  );
 
   // The analytics overview dashboard is only available to superadmin/admin.
   if (user?.role === 'superadmin' || user?.role === 'admin') {

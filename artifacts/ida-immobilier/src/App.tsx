@@ -118,7 +118,7 @@ function Router() {
       <Route path="/tableau-de-bord/articles" component={() => <ProtectedRoute component={ArticlesList} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/articles/nouveau" component={() => <ProtectedRoute component={NouvelArticle} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/articles/:id" component={() => <ProtectedRoute component={EditArticle} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
-      <Route path="/tableau-de-bord/leads" component={() => <ProtectedRoute component={Leads} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
+      <Route path="/tableau-de-bord/leads" component={() => <ProtectedRoute component={Leads} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager']} />} />
       <Route path="/tableau-de-bord/rendez-vous" component={() => <ProtectedRoute component={AdminRendezVous} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/estimations" component={() => <ProtectedRoute component={AdminEstimations} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
       <Route path="/tableau-de-bord/messages" component={() => <ProtectedRoute component={AdminMessages} layout={AdminLayout} allowedRoles={['admin', 'superadmin', 'agency_manager', 'agent']} />} />
