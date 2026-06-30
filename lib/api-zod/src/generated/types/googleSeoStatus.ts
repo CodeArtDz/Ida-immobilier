@@ -11,6 +11,8 @@ import type { GoogleSeoStatusSearchConsole } from './googleSeoStatusSearchConsol
 
 export interface GoogleSeoStatus {
   configured: boolean;
+  /** @nullable */
+  serviceAccountEmail?: string | null;
   searchConsole: GoogleSeoStatusSearchConsole;
   analytics: GoogleSeoStatusAnalytics;
   pageSpeed: GoogleSeoStatusPageSpeed;

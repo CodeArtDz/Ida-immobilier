@@ -77,6 +77,8 @@ export type GoogleSeoStatusPageSpeed = {
 
 export interface GoogleSeoStatus {
   configured: boolean;
+  /** @nullable */
+  serviceAccountEmail?: string | null;
   searchConsole: GoogleSeoStatusSearchConsole;
   analytics: GoogleSeoStatusAnalytics;
   pageSpeed: GoogleSeoStatusPageSpeed;

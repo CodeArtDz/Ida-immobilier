@@ -1817,6 +1817,7 @@ components:
       required: [configured, searchConsole, analytics, pageSpeed]
       properties:
         configured: { type: boolean }
+        serviceAccountEmail: { type: ["string", "null"] }
         searchConsole:
           type: object
           required: [connected]

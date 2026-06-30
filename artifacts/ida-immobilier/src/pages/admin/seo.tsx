@@ -76,13 +76,36 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
+// ─── Service-account email hint (which Google account to authorize) ───────────
+function ServiceAccountHint({ email, where }: { email: string | null | undefined; where: string }) {
+  if (!email) return null;
+  return (
+    <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
+      <p className="text-muted-foreground">
+        Accordez l'accès en lecture à ce compte de service dans <strong>{where}</strong> :
+      </p>
+      <code className="mt-1 block break-all font-mono text-xs text-foreground">{email}</code>
+    </div>
+  );
+}
+
 // ─── Guided setup (shown when a Google service is not connected) ──────────────
-function GuidedSetup({ service }: { service: "searchConsole" | "analytics" }) {
+function GuidedSetup({
+  service,
+  serviceAccountEmail,
+}: {
+  service: "searchConsole" | "analytics";
+  serviceAccountEmail?: string | null;
+}) {
   const secret =
     service === "searchConsole"
       ? "GSC_SITE_URL"
       : "GA4_PROPERTY_ID";
   const label = service === "searchConsole" ? "Google Search Console" : "Google Analytics (GA4)";
+  const where =
+    service === "searchConsole"
+      ? "Search Console (Utilisateurs et autorisations)"
+      : "GA4 (Administration → Accès à la propriété)";
   return (
     <Card className="border-dashed">
       <CardHeader>
@@ -103,11 +126,7 @@ function GuidedSetup({ service }: { service: "searchConsole" | "analytics" }) {
             {service === "searchConsole" ? "Google Search Console" : "Google Analytics Data"}.
           </li>
           <li>
-            Accordez l'accès (lecture) à l'adresse e-mail du compte de service dans{" "}
-            {service === "searchConsole"
-              ? "Search Console (Utilisateurs et autorisations)"
-              : "GA4 (Administration → Accès à la propriété)"}
-            .
+            Accordez l'accès (lecture) à l'adresse e-mail du compte de service dans {where}.
           </li>
           <li>
             Ajoutez les secrets suivants au projet :
@@ -117,6 +136,7 @@ function GuidedSetup({ service }: { service: "searchConsole" | "analytics" }) {
             </div>
           </li>
         </ol>
+        <ServiceAccountHint email={serviceAccountEmail} where={where} />
       </CardContent>
     </Card>
   );
@@ -292,10 +312,18 @@ function AuditTab() {
 }
 
 // ─── Search Console tab ──────────────────────────────────────────────────────
-function SearchConsoleTab({ connected, days }: { connected: boolean; days: number }) {
+function SearchConsoleTab({
+  connected,
+  days,
+  serviceAccountEmail,
+}: {
+  connected: boolean;
+  days: number;
+  serviceAccountEmail?: string | null;
+}) {
   const { data, isLoading } = useGetSearchConsoleData({ days });
 
-  if (!connected) return <GuidedSetup service="searchConsole" />;
+  if (!connected) return <GuidedSetup service="searchConsole" serviceAccountEmail={serviceAccountEmail} />;
   if (isLoading) return <Skeleton className="h-64 w-full" />;
   if (!data) return <p className="text-muted-foreground">Aucune donnée.</p>;
   if (data.error)
@@ -305,9 +333,15 @@ function SearchConsoleTab({ connected, days }: { connected: boolean; days: numbe
           <CardTitle className="text-base text-destructive">Erreur Search Console</CardTitle>
           <CardDescription>{data.error}</CardDescription>
         </CardHeader>
+        <CardContent>
+          <ServiceAccountHint
+            email={serviceAccountEmail}
+            where="Search Console (Utilisateurs et autorisations)"
+          />
+        </CardContent>
       </Card>
     );
-  if (!data.connected) return <GuidedSetup service="searchConsole" />;
+  if (!data.connected) return <GuidedSetup service="searchConsole" serviceAccountEmail={serviceAccountEmail} />;
 
   return (
     <div className="space-y-6">
@@ -384,10 +418,18 @@ function QueryTable({ rows, keyLabel }: { rows: Array<{ key: string; clicks: num
 }
 
 // ─── Analytics tab ───────────────────────────────────────────────────────────
-function AnalyticsTab({ connected, days }: { connected: boolean; days: number }) {
+function AnalyticsTab({
+  connected,
+  days,
+  serviceAccountEmail,
+}: {
+  connected: boolean;
+  days: number;
+  serviceAccountEmail?: string | null;
+}) {
   const { data, isLoading } = useGetAnalyticsData({ days });
 
-  if (!connected) return <GuidedSetup service="analytics" />;
+  if (!connected) return <GuidedSetup service="analytics" serviceAccountEmail={serviceAccountEmail} />;
   if (isLoading) return <Skeleton className="h-64 w-full" />;
   if (!data) return <p className="text-muted-foreground">Aucune donnée.</p>;
   if (data.error)
@@ -397,9 +439,15 @@ function AnalyticsTab({ connected, days }: { connected: boolean; days: number })
           <CardTitle className="text-base text-destructive">Erreur Analytics</CardTitle>
           <CardDescription>{data.error}</CardDescription>
         </CardHeader>
+        <CardContent>
+          <ServiceAccountHint
+            email={serviceAccountEmail}
+            where="GA4 (Administration → Accès à la propriété)"
+          />
+        </CardContent>
       </Card>
     );
-  if (!data.connected) return <GuidedSetup service="analytics" />;
+  if (!data.connected) return <GuidedSetup service="analytics" serviceAccountEmail={serviceAccountEmail} />;
 
   return (
     <div className="space-y-6">
@@ -581,6 +629,7 @@ export default function AdminSeo() {
   const { data: status } = useGetGoogleSeoStatus();
   const scConnected = status?.searchConsole.connected ?? false;
   const gaConnected = status?.analytics.connected ?? false;
+  const serviceAccountEmail = status?.serviceAccountEmail ?? null;
 
   return (
     <div className="space-y-8">
@@ -609,8 +658,8 @@ export default function AdminSeo() {
         </div>
 
         <TabsContent value="audit"><AuditTab /></TabsContent>
-        <TabsContent value="search-console"><SearchConsoleTab connected={scConnected} days={parseInt(days, 10)} /></TabsContent>
-        <TabsContent value="analytics"><AnalyticsTab connected={gaConnected} days={parseInt(days, 10)} /></TabsContent>
+        <TabsContent value="search-console"><SearchConsoleTab connected={scConnected} days={parseInt(days, 10)} serviceAccountEmail={serviceAccountEmail} /></TabsContent>
+        <TabsContent value="analytics"><AnalyticsTab connected={gaConnected} days={parseInt(days, 10)} serviceAccountEmail={serviceAccountEmail} /></TabsContent>
         <TabsContent value="cwv"><CoreWebVitalsTab /></TabsContent>
       </Tabs>
     </div>

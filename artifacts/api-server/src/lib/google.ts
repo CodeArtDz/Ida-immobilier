@@ -41,6 +41,10 @@ export function getServiceAccount(): ServiceAccount | null {
   return null;
 }
 
+export function getServiceAccountEmail(): string | null {
+  return getServiceAccount()?.client_email ?? null;
+}
+
 export function gscSiteUrl(): string | null {
   return process.env.GSC_SITE_URL?.trim() || null;
 }

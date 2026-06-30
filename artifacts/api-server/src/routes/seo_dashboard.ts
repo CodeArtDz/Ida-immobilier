@@ -13,6 +13,7 @@ import { logger } from "../lib/logger";
 import {
   searchConsoleConnected,
   analyticsConnected,
+  getServiceAccountEmail,
   gscSiteUrl,
   ga4PropertyId,
   fetchSearchConsole,
@@ -240,6 +241,7 @@ router.get("/seo/google/status", ...staffOnly, async (_req, res) => {
   const gaConnected = analyticsConnected();
   res.json({
     configured: scConnected || gaConnected,
+    serviceAccountEmail: getServiceAccountEmail(),
     searchConsole: { connected: scConnected, siteUrl: scConnected ? gscSiteUrl() : null },
     analytics: { connected: gaConnected, propertyId: gaConnected ? ga4PropertyId() : null },
     pageSpeed: { available: true },

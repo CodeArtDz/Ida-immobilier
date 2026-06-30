@@ -2502,6 +2502,7 @@ export const GetSeoAuditResponse = zod.object({
  */
 export const GetGoogleSeoStatusResponse = zod.object({
   "configured": zod.boolean(),
+  "serviceAccountEmail": zod.string().nullish(),
   "searchConsole": zod.object({
   "connected": zod.boolean(),
   "siteUrl": zod.string().nullish()
