@@ -1,5 +1,7 @@
-// Email delivery via the Resend connector (Replit Integrations).
-// The connectors SDK handles the Resend API key / auth automatically.
+// Email delivery via Resend.
+// - On Replit: the connectors SDK handles the Resend API key / auth automatically.
+// - On Vercel: the connectors SDK is unavailable, so we call the Resend REST API
+//   directly using the RESEND_API_KEY secret.
 import { ReplitConnectors } from "@replit/connectors-sdk";
 import { logger } from "./logger";
 
@@ -10,6 +12,8 @@ import { logger } from "./logger";
 const EMAIL_FROM = process.env.EMAIL_FROM || "I.D.A Immobilier <onboarding@resend.dev>";
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@ida-immobilier.fr";
 
+const RESEND_API_URL = "https://api.resend.com/emails";
+
 const connectors = new ReplitConnectors();
 
 interface SendEmailArgs {
@@ -19,29 +23,65 @@ interface SendEmailArgs {
   replyTo?: string;
 }
 
+// Builds the Resend /emails request payload shared by both transports.
+function buildPayload({ to, subject, html, replyTo }: SendEmailArgs): string {
+  return JSON.stringify({
+    from: EMAIL_FROM,
+    to: [to],
+    subject,
+    html,
+    ...(replyTo ? { reply_to: replyTo } : {}),
+  });
+}
+
+// Sends one email via the Resend REST API directly (used on Vercel, where the
+// Replit connectors SDK is unavailable). Auth comes from RESEND_API_KEY.
+async function sendViaResendApi(args: SendEmailArgs): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    logger.error({ to: args.to, subject: args.subject }, "RESEND_API_KEY is not set; cannot send email on Vercel");
+    return false;
+  }
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: buildPayload(args),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    logger.error({ to: args.to, subject: args.subject, status: res.status, detail }, "Resend email rejected");
+    return false;
+  }
+  return true;
+}
+
+// Sends one email through the Replit Resend connector proxy (used on Replit).
+async function sendViaConnector(args: SendEmailArgs): Promise<boolean> {
+  const res = await connectors.proxy("resend", "/emails", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: buildPayload(args),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    logger.error({ to: args.to, subject: args.subject, status: res.status, detail }, "Resend email rejected");
+    return false;
+  }
+  return true;
+}
+
 // Sends one email through Resend. Returns true on success, false on any failure
 // (never throws) so callers can treat email as a best-effort side effect.
-async function sendEmail({ to, subject, html, replyTo }: SendEmailArgs): Promise<boolean> {
+// Picks the transport based on the runtime: the Resend REST API on Vercel, the
+// Replit connectors proxy otherwise.
+async function sendEmail(args: SendEmailArgs): Promise<boolean> {
   try {
-    const res = await connectors.proxy("resend", "/emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [to],
-        subject,
-        html,
-        ...(replyTo ? { reply_to: replyTo } : {}),
-      }),
-    });
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      logger.error({ to, subject, status: res.status, detail }, "Resend email rejected");
-      return false;
-    }
-    return true;
+    return process.env.VERCEL ? await sendViaResendApi(args) : await sendViaConnector(args);
   } catch (err) {
-    logger.error({ err, to, subject }, "Failed to send email via Resend");
+    logger.error({ err, to: args.to, subject: args.subject }, "Failed to send email via Resend");
     return false;
   }
 }
