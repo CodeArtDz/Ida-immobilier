@@ -38,6 +38,7 @@ import {
   Smartphone,
   Monitor,
   KeyRound,
+  Clock,
 } from "lucide-react";
 import {
   LineChart,
@@ -138,6 +139,44 @@ function GuidedSetup({
         </ol>
         <ServiceAccountHint email={serviceAccountEmail} where={where} />
       </CardContent>
+    </Card>
+  );
+}
+
+// ─── Empty-state notice (connected, but no data accrued yet) ─────────────────
+function NoDataYetNotice({
+  service,
+  target,
+}: {
+  service: "searchConsole" | "analytics";
+  target?: string | null;
+}) {
+  const label = service === "searchConsole" ? "Search Console" : "Analytics (GA4)";
+  const targetLabel = service === "searchConsole" ? "Site connecté" : "Propriété connectée";
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-primary" />
+          <CardTitle className="text-base">Le suivi vient de démarrer</CardTitle>
+          <Badge variant="secondary">Connecté</Badge>
+        </div>
+        <CardDescription>
+          La connexion à {label} fonctionne correctement, mais aucune donnée n'est encore
+          disponible. C'est tout à fait normal pour un site récemment mis en ligne : Google
+          commence à collecter les chiffres dès maintenant. Les premières données apparaissent
+          généralement sous quelques jours, le temps que le site accumule du trafic et des
+          impressions. Il n'y a rien à corriger — revenez consulter ce panneau d'ici peu.
+        </CardDescription>
+      </CardHeader>
+      {target && (
+        <CardContent>
+          <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
+            <p className="text-muted-foreground">{targetLabel} :</p>
+            <code className="mt-1 block break-all font-mono text-xs text-foreground">{target}</code>
+          </div>
+        </CardContent>
+      )}
     </Card>
   );
 }
@@ -316,10 +355,12 @@ function SearchConsoleTab({
   connected,
   days,
   serviceAccountEmail,
+  siteUrl,
 }: {
   connected: boolean;
   days: number;
   serviceAccountEmail?: string | null;
+  siteUrl?: string | null;
 }) {
   const { data, isLoading } = useGetSearchConsoleData({ days });
 
@@ -342,6 +383,9 @@ function SearchConsoleTab({
       </Card>
     );
   if (!data.connected) return <GuidedSetup service="searchConsole" serviceAccountEmail={serviceAccountEmail} />;
+
+  const noDataYet = data.totals.clicks === 0 && data.totals.impressions === 0;
+  if (noDataYet) return <NoDataYetNotice service="searchConsole" target={siteUrl} />;
 
   return (
     <div className="space-y-6">
@@ -422,10 +466,12 @@ function AnalyticsTab({
   connected,
   days,
   serviceAccountEmail,
+  propertyId,
 }: {
   connected: boolean;
   days: number;
   serviceAccountEmail?: string | null;
+  propertyId?: string | null;
 }) {
   const { data, isLoading } = useGetAnalyticsData({ days });
 
@@ -448,6 +494,10 @@ function AnalyticsTab({
       </Card>
     );
   if (!data.connected) return <GuidedSetup service="analytics" serviceAccountEmail={serviceAccountEmail} />;
+
+  const noDataYet =
+    data.totals.users === 0 && data.totals.sessions === 0 && data.totals.pageViews === 0;
+  if (noDataYet) return <NoDataYetNotice service="analytics" target={propertyId} />;
 
   return (
     <div className="space-y-6">
@@ -630,6 +680,8 @@ export default function AdminSeo() {
   const scConnected = status?.searchConsole.connected ?? false;
   const gaConnected = status?.analytics.connected ?? false;
   const serviceAccountEmail = status?.serviceAccountEmail ?? null;
+  const scSiteUrl = status?.searchConsole.siteUrl ?? null;
+  const gaPropertyId = status?.analytics.propertyId ?? null;
 
   return (
     <div className="space-y-8">
@@ -658,8 +710,8 @@ export default function AdminSeo() {
         </div>
 
         <TabsContent value="audit"><AuditTab /></TabsContent>
-        <TabsContent value="search-console"><SearchConsoleTab connected={scConnected} days={parseInt(days, 10)} serviceAccountEmail={serviceAccountEmail} /></TabsContent>
-        <TabsContent value="analytics"><AnalyticsTab connected={gaConnected} days={parseInt(days, 10)} serviceAccountEmail={serviceAccountEmail} /></TabsContent>
+        <TabsContent value="search-console"><SearchConsoleTab connected={scConnected} days={parseInt(days, 10)} serviceAccountEmail={serviceAccountEmail} siteUrl={scSiteUrl} /></TabsContent>
+        <TabsContent value="analytics"><AnalyticsTab connected={gaConnected} days={parseInt(days, 10)} serviceAccountEmail={serviceAccountEmail} propertyId={gaPropertyId} /></TabsContent>
         <TabsContent value="cwv"><CoreWebVitalsTab /></TabsContent>
       </Tabs>
     </div>
